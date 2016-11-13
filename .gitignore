@@ -1,13 +1,14 @@
-## cmake
-
+## cmake ##
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts
-Makefile
-cmake_install.cmake
-install_manifest.txt
 CTestTestfile.cmake
+Makefile
+Testing/
+cmake_install.cmake
+compile_commands.json
+install_manifest.txt
 
-## binaries
-
+## binaries ##
 ctyml
+ctyml_test

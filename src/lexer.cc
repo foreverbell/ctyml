@@ -1,11 +1,41 @@
 #include "lexer.h"
 #include "token.h"
 
+#include <map>
+
+using std::map;
 using std::string;
 using std::unique_ptr;
 using std::vector;
 
 namespace {
+
+const map<string, TokenType> keyword_list = {
+  {"if", TokenType::If},
+  {"then", TokenType::Then},
+  {"else", TokenType::Else},
+  {"true", TokenType::True},
+  {"false", TokenType::False},
+  {"pred", TokenType::Pred},
+  {"succ", TokenType::Succ},
+  {"iszero", TokenType::IsZero},
+  {"nil", TokenType::Nil},
+  {"cons", TokenType::Cons},
+  {"isnil", TokenType::IsNil},
+  {"head", TokenType::Head},
+  {"tail", TokenType::Tail},
+  {"unit", TokenType::Unit},
+  {"lambda", TokenType::Lambda},
+  {"let", TokenType::Let},
+  {"in", TokenType::In},
+  {"letrec", TokenType::Letrec},
+  {"type", TokenType::TypeAlias},
+  {"as", TokenType::As},
+  {"Bool", TokenType::Bool},
+  {"Nat", TokenType::Nat},
+  {"List", TokenType::List},
+  {"Unit", TokenType::UUnit},
+};
 
 int parse_number(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
   assert(isdigit(line[line_offset]));
@@ -31,6 +61,20 @@ int parse_identifer(const string& line, int line_number, int line_offset, unique
       ++advance;
     } else {
       break;
+    }
+  }
+
+  const string identifier = line.substr(line_offset, advance);
+  Location location = Location(line_number, line_offset);
+  map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
+
+  if (iter == keyword_list.end()) {
+    if (!Token::CreateId(location, identifier, token)) {
+      return 0;
+    }
+  } else {
+    if (!Token::Create(iter->second, location, token)) {
+      return 0;
     }
   }
   return advance;
@@ -90,11 +134,11 @@ int parse_token(const string& line, int line_number, int line_offset, unique_ptr
     create_token(TokenType::Arrow);
     return 2;
   }
-  
+
   if (isdigit(line[line_offset])) {
     return parse_number(line, line_number, line_offset, token);
   }
-  
+
   if (isalpha(line[line_offset])) {
     return parse_identifer(line, line_number, line_offset, token);
   }
@@ -109,7 +153,7 @@ int parse_token(const string& line, int line_number, int line_offset, unique_ptr
 
 bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) {
   tokens->clear();
-  
+
   int line_number = 0, line_offset = 0;
   for (const string& line : input) {
     ++line_number;
@@ -121,7 +165,7 @@ bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) 
         continue;
       }
       unique_ptr<Token> token;
-      int advance = parse_token(line, line_number, line_offset, &token);
+      const int advance = parse_token(line, line_number, line_offset, &token);
       if (advance == 0) {
         return false;
       } else {

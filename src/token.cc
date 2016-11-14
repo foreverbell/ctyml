@@ -5,7 +5,7 @@ using std::unique_ptr;
 
 /* static */
 bool Token::Create(TokenType type, Location location, unique_ptr<Token>* token) {
-  if (type == TokenType::Int || type != TokenType::LCaseId || type == TokenType::UCaseId) {
+  if (type == TokenType::Int || type == TokenType::LCaseId || type == TokenType::UCaseId) {
     return false;
   }
   token->reset(new Token(type, location, -1, ""));

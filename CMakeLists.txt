@@ -13,8 +13,9 @@ add_executable (ctyml ${SOURCE_FILES})
 
 # Tests.
 enable_testing ()
-
-file (GLOB TEST_FILES tests/*.cc)
+include_directories (${GTEST_INCLUDE_DIRS} src/)
+file (GLOB TEST_FILES tests/*.cc src/*.cc)
+list(REMOVE_ITEM TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
 add_executable (ctyml_test ${TEST_FILES})
 add_dependencies (ctyml_test gtest)
 target_link_libraries (ctyml_test gtest_main)

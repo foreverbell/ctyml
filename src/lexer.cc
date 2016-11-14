@@ -1,16 +1,16 @@
 #include "lexer.h"
 #include "token.h"
 
-#include <map>
+#include <unordered_map>
 
-using std::map;
 using std::string;
 using std::unique_ptr;
+using std::unordered_map;
 using std::vector;
 
 namespace {
 
-const map<string, TokenType> keyword_list = {
+const unordered_map<string, TokenType> keyword_list = {
   {"if", TokenType::If},
   {"then", TokenType::Then},
   {"else", TokenType::Else},
@@ -66,7 +66,7 @@ int parse_identifer(const string& line, int line_number, int line_offset, unique
 
   const string identifier = line.substr(line_offset, advance);
   Location location = Location(line_number, line_offset);
-  map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
+  unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
 
   if (iter == keyword_list.end()) {
     if (!Token::CreateId(location, identifier, token)) {
@@ -77,6 +77,7 @@ int parse_identifer(const string& line, int line_number, int line_offset, unique
       return 0;
     }
   }
+
   return advance;
 }
 
@@ -89,45 +90,29 @@ int parse_token(const string& line, int line_number, int line_offset, unique_ptr
     } \
   } while (false)
 
+#define check_single_char_token(ch, token_type) \
+  case ch: { \
+    create_token(token_type); \
+    return 1; \
+  }
+
   // Handle single char token.
   switch (line[line_offset]) {
-  case '.':
-    create_token(TokenType::Dot);
-    return 1;
-  case ',':
-    create_token(TokenType::Comma);
-    return 1;
-  case ':':
-    create_token(TokenType::Colon);
-    return 1;
-  case ';':
-    create_token(TokenType::Semi);
-    return 1;
-  case '=':
-    create_token(TokenType::Eq);
-    return 1;
-  case '_':
-    create_token(TokenType::UScore);
-    return 1;
-  case '(':
-    create_token(TokenType::LParen);
-    return 1;
-  case ')':
-    create_token(TokenType::RParen);
-    return 1;
-  case '{':
-    create_token(TokenType::LCurly);
-    return 1;
-  case '}':
-    create_token(TokenType::RCurly);
-    return 1;
-  case '[':
-    create_token(TokenType::LBracket);
-    return 1;
-  case ']':
-    create_token(TokenType::RBracket);
-    return 1;
+    check_single_char_token('.', TokenType::Dot);
+    check_single_char_token(',', TokenType::Comma);
+    check_single_char_token(':', TokenType::Colon);
+    check_single_char_token(';', TokenType::Semi);
+    check_single_char_token('=', TokenType::Eq);
+    check_single_char_token('_', TokenType::UScore);
+    check_single_char_token('(', TokenType::LParen);
+    check_single_char_token(')', TokenType::RParen);
+    check_single_char_token('{', TokenType::LCurly);
+    check_single_char_token('}', TokenType::RCurly);
+    check_single_char_token('[', TokenType::LBracket);
+    check_single_char_token(']', TokenType::RBracket);
   }
+
+#undef check_single_char_token
 
   // Handle multiple char token, natural number, identifier.
   if (line_offset + 1 < line.length() && line[line_offset] == '-' && line[line_offset + 1] == '>') {
@@ -150,11 +135,10 @@ int parse_token(const string& line, int line_number, int line_offset, unique_ptr
 
 }  // namespace
 
-
 bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) {
-  tokens->clear();
-
   int line_number = 0, line_offset = 0;
+  unique_ptr<Token> token;
+
   for (const string& line : input) {
     ++line_number;
     line_offset = 0;
@@ -164,7 +148,6 @@ bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) 
         ++line_offset;
         continue;
       }
-      unique_ptr<Token> token;
       const int advance = parse_token(line, line_number, line_offset, &token);
       if (advance == 0) {
         return false;

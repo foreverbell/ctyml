@@ -18,13 +18,16 @@ class Token final {
   TokenType type() const { return type_; }
   Location location() const { return location_; }
 
+  bool is_int() const { return type() == TokenType::Int; }
+  bool is_id() const { return type() == TokenType::LCaseId || type() == TokenType::UCaseId; }
+
   int number() const {
-    assert(type_ == TokenType::Int);
+    assert(is_int());
     return number_;
   }
 
   const std::string& identifier() const {
-    assert(type_ == TokenType::LCaseId || type_ == TokenType::UCaseId);
+    assert(is_id());
     return identifier_;
   }
 

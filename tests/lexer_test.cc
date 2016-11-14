@@ -24,7 +24,7 @@ token_tuple create_int(int num) {
 }
 
 token_tuple create_id(const string& id) {
-  TokenType type = id[0] >= 'A' && id[0] <= 'Z' ? TokenType::LCaseId : TokenType::UCaseId;
+  TokenType type = id[0] >= 'a' && id[0] <= 'z' ? TokenType::LCaseId : TokenType::UCaseId;
   return std::make_tuple(type, -1, id);
 }
 
@@ -55,8 +55,34 @@ class LexerTest : public ::testing::Test {
   }
 };
 
-TEST_F(LexerTest, Keyword) {
-  test(R"(if true then false else true)",
+TEST_F(LexerTest, KeywordsTest) {
+  test(R"(if true then false else true;)",
        {create(TokenType::If), create(TokenType::True), create(TokenType::Then), create(TokenType::False),
-        create(TokenType::Else), create(TokenType::True)});
+        create(TokenType::Else), create(TokenType::True), create(TokenType::Semi)});
 }
+
+TEST_F(LexerTest, SymbolsTest) {
+  test(R"(.,:;=_->(){}[])",
+       {create(TokenType::Dot), create(TokenType::Comma), create(TokenType::Colon), create(TokenType::Semi),
+        create(TokenType::Eq), create(TokenType::UScore), create(TokenType::Arrow), create(TokenType::LParen),
+        create(TokenType::RParen), create(TokenType::LCurly), create(TokenType::RCurly), create(TokenType::LBracket),
+        create(TokenType::RBracket)});
+}
+
+TEST_F(LexerTest, VariablesTest) {
+  test(R"(if false then x else y;)",
+       {create(TokenType::If), create(TokenType::False), create(TokenType::Then), create_id("x"),
+        create(TokenType::Else), create_id("y"), create(TokenType::Semi)});
+}
+
+TEST_F(LexerTest, MixtureTest) {
+  test(R"(
+    lambda x. x;
+    type T = Nat->Nat;
+       )",
+       {create(TokenType::Lambda), create_id("x"), create(TokenType::Dot), create_id("x"), create(TokenType::Semi),
+        create(TokenType::TypeAlias), create_id("T"), create(TokenType::Eq), create(TokenType::Nat),
+        create(TokenType::Arrow), create(TokenType::Nat), create(TokenType::Semi)});
+}
+
+// TODO(foreverbell): Test lexical error.

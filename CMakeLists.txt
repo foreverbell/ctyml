@@ -6,12 +6,12 @@ project (ctyml CXX)
 set (CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
 add_subdirectory (deps/gtest)
-add_definitions (-Wall -std=c++11)
+add_definitions (-Wall -std=c++1y)
 
 file (GLOB SOURCE_FILES src/*.cc)
 add_executable (ctyml ${SOURCE_FILES})
 
-# Tests
+# Tests.
 enable_testing ()
 
 file (GLOB TEST_FILES tests/*.cc)

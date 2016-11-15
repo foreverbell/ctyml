@@ -7,12 +7,27 @@
 #include <utility>
 #include <vector>
 
-class Binding { };
+class Binding {
+ public:
+  virtual ~Binding() = default;
+};
+
+class VariableBinding : public Binding {
+
+};
+
+class TermAliasBinding : public Binding {
+
+};
+
+class TypeAliasBinding : public Binding {
+
+};
 
 class Context final {
  public:
-  Context();
-  ~Context();
+  Context() = default;
+  ~Context() = default;
 
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
@@ -24,7 +39,7 @@ class Context final {
   // Picks one fresh alias of <name> that does not appear in <bindings_>.
   std::string PickFreshName(const std::string& name);
 
-  // Returns the smallest index (logical index).
+  // Returns the smallest index (logical index), "-1" if not found.
   int ToIndex(const std::string& name);
 
   const std::pair<std::string, std::unique_ptr<Binding>>& get(int index) const {

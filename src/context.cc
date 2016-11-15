@@ -41,9 +41,6 @@ int mex(vector<int> vec) {
 
 }  // namespace
 
-Context::Context() { }
-Context::~Context() { }
-
 void Context::AddBinding(const string& name, Binding* binding) {
   const size_t count = size();
   index_map_[name].push_back(count);

@@ -1,5 +1,6 @@
 #include <cstdio>
 
+#include "ast.h"
 #include "common.h"
 #include "token.h"
 

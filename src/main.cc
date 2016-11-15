@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include "syntax.h"
+#include "common.h"
 #include "token.h"
 
 using namespace std;

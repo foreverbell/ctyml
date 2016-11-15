@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "syntax.h"
+#include "common.h"
 #include "token.h"
 
+// TODO(foreverbell): set returning type to void and throw an exception?
 bool ScanTokens(const std::vector<std::string>& input, std::vector<std::unique_ptr<Token>>* tokens);

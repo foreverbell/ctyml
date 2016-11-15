@@ -37,7 +37,7 @@ const unordered_map<string, TokenType> keyword_list = {
   {"Unit", TokenType::UUnit},
 };
 
-int parse_number(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+int ParseNumber(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
   assert(isdigit(line[line_offset]));
 
   int number = 0, advance = 0;
@@ -51,7 +51,7 @@ int parse_number(const string& line, int line_number, int line_offset, unique_pt
   return advance;
 }
 
-int parse_identifer(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+int ParseIdentifer(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
   assert(isalpha(line[line_offset]));
 
   int advance = 1;
@@ -82,7 +82,7 @@ int parse_identifer(const string& line, int line_number, int line_offset, unique
 }
 
 // Parses a single token, and returns the advance delta of line offset.
-int parse_token(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+int ParseToken(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
 #define create_token(token_type) \
   do { \
     if (!Token::Create(token_type, Location(line_number, line_offset), token)) { \
@@ -121,11 +121,11 @@ int parse_token(const string& line, int line_number, int line_offset, unique_ptr
   }
 
   if (isdigit(line[line_offset])) {
-    return parse_number(line, line_number, line_offset, token);
+    return ParseNumber(line, line_number, line_offset, token);
   }
 
   if (isalpha(line[line_offset])) {
-    return parse_identifer(line, line_number, line_offset, token);
+    return ParseIdentifer(line, line_number, line_offset, token);
   }
 
 #undef create_token
@@ -148,7 +148,7 @@ bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) 
         ++line_offset;
         continue;
       }
-      const int advance = parse_token(line, line_number, line_offset, &token);
+      const int advance = ParseToken(line, line_number, line_offset, &token);
       if (advance == 0) {
         return false;
       } else {

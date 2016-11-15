@@ -4,7 +4,25 @@
 #include <memory>
 #include <string>
 
-#include "syntax.h"
+#include "common.h"
+
+enum class TokenType {
+  Undefined,
+  Int,               // With a natural integer number.
+  LCaseId, UCaseId,  // With an alphabet-leading identifier.
+  If, Then, Else,
+  Succ, Pred, IsZero,
+  True, False, Zero,
+  Nil, Cons,
+  IsNil, Head, Tail,
+  Unit,
+  Bool, Nat, List, UUnit,
+  Lambda, Let, In, Letrec, TypeAlias, As,
+  LParen, RParen,
+  LCurly, RCurly,
+  LBracket, RBracket,
+  Arrow, Dot, Comma, Colon, Semi, Eq, UScore,
+};
 
 class Token final {
  public:

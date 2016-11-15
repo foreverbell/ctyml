@@ -1,10 +1,9 @@
 #pragma once
 
 struct Location {
-  size_t line_number;
-  size_t line_offset;
+  const size_t line_number;
+  const size_t line_offset;
 
-  Location() : line_number(0), line_offset(0) { }
   Location(size_t number, size_t offset) : line_number(number), line_offset(offset) { }
 };
 

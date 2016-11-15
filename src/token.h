@@ -7,7 +7,6 @@
 #include "common.h"
 
 enum class TokenType {
-  Undefined,
   Int,               // With a natural integer number.
   LCaseId, UCaseId,  // With an alphabet-leading identifier.
   If, Then, Else,
@@ -28,6 +27,7 @@ class Token final {
  public:
   Token() = delete;
   Token(const Token&) = delete;
+  Token& operator=(const Token&) = delete;
 
   static bool Create(TokenType type, Location location, std::unique_ptr<Token>* token);
   static bool CreateInt(Location location, int number, std::unique_ptr<Token>* token);
@@ -53,9 +53,9 @@ class Token final {
   Token(TokenType type, Location location, int number, const std::string& identifier)
     : type_(type), location_(location), number_(number), identifier_(identifier) { }
 
-  TokenType type_ = TokenType::Undefined;
-  Location location_;
+  const TokenType type_;
+  const Location location_;
 
-  int number_ = -1;
-  std::string identifier_;
+  const int number_;
+  const std::string identifier_;
 };

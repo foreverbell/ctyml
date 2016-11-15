@@ -30,8 +30,6 @@ token_tuple create_id(const string& id) {
 
 class LexerTest : public ::testing::Test {
  protected:
-  void SetUp() override { }
-
   void test(const string& input, const vector<token_tuple>& expected) {
     stringstream ss(input);
     vector<string> inputs;

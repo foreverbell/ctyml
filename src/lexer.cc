@@ -37,6 +37,21 @@ const unordered_map<string, TokenType> keyword_list = {
   {"Unit", TokenType::UUnit},
 };
 
+const unordered_map<char, TokenType> onechar_list = {
+  {'.', TokenType::Dot},
+  {',', TokenType::Comma},
+  {':', TokenType::Colon},
+  {';', TokenType::Semi},
+  {'=', TokenType::Eq},
+  {'_', TokenType::UScore},
+  {'(', TokenType::LParen},
+  {')', TokenType::RParen},
+  {'{', TokenType::LCurly},
+  {'}', TokenType::RCurly},
+  {'[', TokenType::LBracket},
+  {']', TokenType::RBracket},
+};
+
 size_t ParseNumber(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
   assert(isdigit(line[line_offset]));
 
@@ -66,8 +81,8 @@ size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset
   }
 
   const string identifier = line.substr(line_offset, advance);
-  Location location = Location(line_number, line_offset);
-  unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
+  const Location location = Location(line_number, line_offset);
+  const unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
 
   if (iter == keyword_list.end()) {
     if (!Token::CreateId(location, identifier, token)) {
@@ -91,35 +106,20 @@ size_t ParseToken(const string& line, size_t line_number, size_t line_offset, un
     } \
   } while (false)
 
-#define check_single_char_token(ch, token_type) \
-  case ch: { \
-    create_token(token_type); \
-    return 1; \
-  }
-
   // Handle single char token.
-  switch (line[line_offset]) {
-    check_single_char_token('.', TokenType::Dot);
-    check_single_char_token(',', TokenType::Comma);
-    check_single_char_token(':', TokenType::Colon);
-    check_single_char_token(';', TokenType::Semi);
-    check_single_char_token('=', TokenType::Eq);
-    check_single_char_token('_', TokenType::UScore);
-    check_single_char_token('(', TokenType::LParen);
-    check_single_char_token(')', TokenType::RParen);
-    check_single_char_token('{', TokenType::LCurly);
-    check_single_char_token('}', TokenType::RCurly);
-    check_single_char_token('[', TokenType::LBracket);
-    check_single_char_token(']', TokenType::RBracket);
+  const unordered_map<char, TokenType>::const_iterator iter = onechar_list.find(line[line_offset]);
+  if (iter != onechar_list.end()) {
+    create_token(iter->second);
+    return 1;
   }
-
-#undef check_single_char_token
 
   // Handle multiple char token, natural number, identifier.
   if (line_offset + 1 < line.length() && line[line_offset] == '-' && line[line_offset + 1] == '>') {
     create_token(TokenType::Arrow);
     return 2;
   }
+
+#undef create_token
 
   if (isdigit(line[line_offset])) {
     return ParseNumber(line, line_number, line_offset, token);
@@ -128,8 +128,6 @@ size_t ParseToken(const string& line, size_t line_number, size_t line_offset, un
   if (isalpha(line[line_offset])) {
     return ParseIdentifer(line, line_number, line_offset, token);
   }
-
-#undef create_token
 
   return 0;
 }

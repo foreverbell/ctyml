@@ -83,6 +83,9 @@
 //
 // FieldType = lcid ':' Type
 
+#include <array>
+#include <memory>
+
 #include "common.h"
 #include "token.h"
 #include "visitor.h"
@@ -117,7 +120,7 @@ class Pattern {
  public:
   Pattern(Location location) : location_(location) { }
   virtual ~Pattern() = default;
- 
+
   virtual void Accept(Visitor<Pattern>* visitor) = 0;
 
  private:
@@ -179,20 +182,20 @@ class NAryTerm : public Term {
 
 class PrimitiveTerm : public NAryTerm<0, NullaryTermToken> {
  public:
-  PrimitiveTerm(Location location) : NAryTerm(location) { } 
+  PrimitiveTerm(Location location) : NAryTerm(location) { }
 };
 
 class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
  public:
-  UnaryTerm(Location location) : NAryTerm(location) { } 
+  UnaryTerm(Location location) : NAryTerm(location) { }
 };
 
 class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
  public:
-  BinaryTerm(Location location) : NAryTerm(location) { } 
+  BinaryTerm(Location location) : NAryTerm(location) { }
 };
 
 class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
  public:
-  TernaryTerm(Location location) : NAryTerm(location) { } 
+  TernaryTerm(Location location) : NAryTerm(location) { }
 };

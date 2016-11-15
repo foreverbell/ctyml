@@ -9,8 +9,8 @@ using namespace std;
 int main() {
   printf("%d\n", TokenType::If);
 
-  std::unique_ptr<Token> token;
-  if (Token::CreateInt(Location(1, 1), 123, &token)) {
+  Token* token;
+  if ((token = Token::CreateInt(Location(1, 1), 123))) {
     printf("%d\n", token->number());
   }
 

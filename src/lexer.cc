@@ -61,9 +61,12 @@ size_t ParseNumber(const string& line, size_t line_number, size_t line_offset, u
     number = number * 10 + line[line_offset + advance] - '0';
     advance += 1;
   }
-  if (!Token::CreateInt(Location(line_number, line_offset), number, token)) {
+
+  Token* t = Token::CreateInt(Location(line_number, line_offset), number);
+  if (t == nullptr) {
     return 0;
   }
+  token->reset(t);
   return advance;
 }
 
@@ -83,17 +86,16 @@ size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset
   const string identifier = line.substr(line_offset, advance);
   const Location location = Location(line_number, line_offset);
   const unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
-
+  Token* t = nullptr;
   if (iter == keyword_list.end()) {
-    if (!Token::CreateId(location, identifier, token)) {
-      return 0;
-    }
+    t = Token::CreateId(location, identifier);
   } else {
-    if (!Token::Create(iter->second, location, token)) {
-      return 0;
-    }
+    t = Token::Create(iter->second, location);
   }
-
+  if (t == nullptr) {
+    return 0;
+  }
+  token->reset(t);
   return advance;
 }
 
@@ -101,9 +103,11 @@ size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset
 size_t ParseToken(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
 #define create_token(token_type) \
   do { \
-    if (!Token::Create(token_type, Location(line_number, line_offset), token)) { \
+    Token* t = Token::Create(token_type, Location(line_number, line_offset)); \
+    if (t == nullptr) { \
       return 0; \
     } \
+    token->reset(t); \
   } while (false)
 
   // Handle single char token.

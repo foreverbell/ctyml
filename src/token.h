@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <memory>
 #include <string>
 
 #include "common.h"
@@ -29,34 +28,31 @@ class Token final {
   Token(const Token&) = delete;
   Token& operator=(const Token&) = delete;
 
-  static bool Create(TokenType type, Location location, std::unique_ptr<Token>* token) {
+  static Token* Create(TokenType type, Location location) {
     if (type == TokenType::Int || type == TokenType::LCaseId || type == TokenType::UCaseId) {
-      return false;
+      return nullptr;
     }
-    token->reset(new Token(type, location, -1, ""));
-    return true;
+    return new Token(type, location, -1, "");
   }
 
-  static bool CreateInt(Location location, int number, std::unique_ptr<Token>* token) {
+  static Token* CreateInt(Location location, int number) {
     if (number < 0) {
-      return false;
+      return nullptr;
     }
-    token->reset(new Token(TokenType::Int, location, number, ""));
-    return true;
+    return new Token(TokenType::Int, location, number, "");
   }
 
-  static bool CreateId(Location location, const std::string& id, std::unique_ptr<Token>* token) {
+  static Token* CreateId(Location location, const std::string& id) {
     if (id.empty() || !isalpha(id[0])) {
-      return false;
+      return nullptr;
     }
     // Valid identifier should be led by an alphabet, followed by alphabets, digits, single-quotes or underscores.
     for (size_t i = 1; i < id.size(); ++i) {
       if (!isalpha(id[i]) && !isdigit(id[i]) && id[i] != '\'' && id[i] != '_') {
-        return false;
+        return nullptr;
       }
     }
-    token->reset(new Token(id[0] >= 'A' && id[0] <= 'Z' ? TokenType::UCaseId : TokenType::LCaseId, location, -1, id));
-    return true;
+    return new Token(id[0] >= 'A' && id[0] <= 'Z' ? TokenType::UCaseId : TokenType::LCaseId, location, -1, id);
   }
 
   TokenType type() const { return type_; }

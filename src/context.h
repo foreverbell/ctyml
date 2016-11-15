@@ -23,7 +23,7 @@ class Context final {
   void DropBindings(size_t n);
   // Picks one fresh alias of <name> that does not appear in <bindings_>.
   std::string PickFreshName(const std::string& name);
-  
+
   // Returns the smallest index (logical index).
   int ToIndex(const std::string& name);
 

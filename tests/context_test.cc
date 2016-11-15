@@ -8,7 +8,7 @@
 class ContextTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ctx_.AddName("x"); 
+    ctx_.AddName("x");
   }
 
   Context ctx_;
@@ -51,7 +51,7 @@ TEST_F(ContextTest, FreshNameTest) {
   ctx_.AddName("x_0");
   ctx_.AddName("y");
   ctx_.AddName("foreverbell");
-  
+
   EXPECT_EQ(ctx_.size(), 8);
 
   EXPECT_EQ(ctx_.PickFreshName("x"), "x_3");

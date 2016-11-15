@@ -43,7 +43,7 @@ class LexerTest : public ::testing::Test {
     }
     ASSERT_TRUE(ScanTokens(inputs, &tokens));
     ASSERT_EQ(expected.size(), tokens.size());
-    for (int i = 0; i < expected.size(); ++i) {
+    for (size_t i = 0; i < expected.size(); ++i) {
       EXPECT_EQ(std::get<0>(expected[i]), tokens[i]->type());
       if (tokens[i]->is_int()) {
         EXPECT_EQ(std::get<1>(expected[i]), tokens[i]->number());
@@ -75,14 +75,20 @@ TEST_F(LexerTest, VariablesTest) {
         create(TokenType::Else), create_id("y"), create(TokenType::Semi)});
 }
 
+TEST_F(LexerTest, NumbersTest) {
+  test(R"(123;)",
+       {create_int(123), create(TokenType::Semi)});
+}
+
 TEST_F(LexerTest, MixtureTest) {
   test(R"(
-    lambda x. x;
+    (lambda x. x) 42;
     type T = Nat->Nat;
        )",
-       {create(TokenType::Lambda), create_id("x"), create(TokenType::Dot), create_id("x"), create(TokenType::Semi),
-        create(TokenType::TypeAlias), create_id("T"), create(TokenType::Eq), create(TokenType::Nat),
-        create(TokenType::Arrow), create(TokenType::Nat), create(TokenType::Semi)});
+       {create(TokenType::LParen), create(TokenType::Lambda), create_id("x"), create(TokenType::Dot), create_id("x"),
+        create(TokenType::RParen), create_int(42), create(TokenType::Semi), create(TokenType::TypeAlias),
+        create_id("T"), create(TokenType::Eq), create(TokenType::Nat), create(TokenType::Arrow), create(TokenType::Nat),
+        create(TokenType::Semi)});
 }
 
 // TODO(foreverbell): Test lexical error.

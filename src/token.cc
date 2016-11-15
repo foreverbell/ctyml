@@ -27,7 +27,7 @@ bool Token::CreateId(Location location, const string& id, unique_ptr<Token>* tok
     return false;
   }
   // Valid identifier should be led by an alphabet, followed by alphabets, digits, single-quotes or underscores.
-  for (int i = 1; i < id.size(); ++i) {
+  for (size_t i = 1; i < id.size(); ++i) {
     if (!isalpha(id[i]) && !isdigit(id[i]) && id[i] != '\'' && id[i] != '_') {
       return false;
     }

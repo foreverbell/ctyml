@@ -37,10 +37,11 @@ const unordered_map<string, TokenType> keyword_list = {
   {"Unit", TokenType::UUnit},
 };
 
-int ParseNumber(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+size_t ParseNumber(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
   assert(isdigit(line[line_offset]));
 
-  int number = 0, advance = 0;
+  int number = 0;
+  size_t advance = 0;
   while (line_offset + advance < line.length() && isdigit(line[line_offset + advance])) {
     number = number * 10 + line[line_offset + advance] - '0';
     advance += 1;
@@ -51,10 +52,10 @@ int ParseNumber(const string& line, int line_number, int line_offset, unique_ptr
   return advance;
 }
 
-int ParseIdentifer(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
   assert(isalpha(line[line_offset]));
 
-  int advance = 1;
+  size_t advance = 1;
   while (line_offset + advance < line.length()) {
     char ch = line[line_offset + advance];
     if (isdigit(ch) || isalpha(ch) || ch == '_' || ch == '\'') {
@@ -82,7 +83,7 @@ int ParseIdentifer(const string& line, int line_number, int line_offset, unique_
 }
 
 // Parses a single token, and returns the advance delta of line offset.
-int ParseToken(const string& line, int line_number, int line_offset, unique_ptr<Token>* token) {
+size_t ParseToken(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
 #define create_token(token_type) \
   do { \
     if (!Token::Create(token_type, Location(line_number, line_offset), token)) { \
@@ -136,7 +137,8 @@ int ParseToken(const string& line, int line_number, int line_offset, unique_ptr<
 }  // namespace
 
 bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) {
-  int line_number = 0, line_offset = 0;
+  size_t line_number = 0;
+  size_t line_offset = 0;
   unique_ptr<Token> token;
 
   for (const string& line : input) {

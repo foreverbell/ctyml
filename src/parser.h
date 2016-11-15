@@ -1,5 +1,10 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include "token.h"
+
 // Context free grammar for our toy PL.
 //
 // Topmost = Statement ';'
@@ -82,3 +87,5 @@
 //            | FieldType ',' FieldTypes
 // 
 // FieldType = lcid ':' Type
+
+bool ParseToken(const std::vector<std::unique_ptr<Token>>& tokens);

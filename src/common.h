@@ -1,11 +1,11 @@
 #pragma once
 
 struct Location {
-  int line_number;
-  int line_offset;
+  size_t line_number;
+  size_t line_offset;
 
-  Location() : line_number(-1), line_offset(-1) { }
-  Location(int number, int offset) : line_number(number), line_offset(offset) { }
+  Location() : line_number(0), line_offset(0) { }
+  Location(size_t number, size_t offset) : line_number(number), line_offset(offset) { }
 };
 
 template<class T>

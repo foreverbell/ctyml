@@ -12,6 +12,7 @@ struct Location {
 
   Location() : begin(-1), end(-1) { }
   Location(ssize_t begin, ssize_t end) : begin(begin), end(end) { }
+  Location(Location l, Location r) : begin(l.begin), end(r.end) { }
   Location(const Locatable* l, const Locatable* r);
 };
 

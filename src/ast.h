@@ -2,13 +2,13 @@
 
 // Context free grammar for our toy PL.
 //
-// Topmost = Statement ';'
-//         | Statement ';' Topmost
+// Topmost = Statement
+//         | Statement Topmost
 //
-// Statement = Term
-//           | 'type' ucid '=' Type
-//           | 'let' Pattern '=' Term
-//           | 'letrec' TypedBinder '=' Term
+// Statement = Term ';'
+//           | 'type' ucid '=' Type ';'
+//           | 'let' Pattern '=' Term ';'
+//           | 'letrec' TypedBinder '=' Term ';'
 //
 // Term = AppTerm
 //      | 'lambda' TypedBinders '.' Term
@@ -149,6 +149,23 @@ class RecordPattern : public Pattern {
   void Accept(Visitor<Pattern>* visitor) override { }
 };
 
+// TypedBinders.
+class TypedBinders : public Locatable {
+ public:
+  TypedBinders(Location location) : Locatable(location) { }
+
+  void add(const std::string& variable, TermType* type) {
+    binders_.emplace_back(variable, std::unique_ptr<TermType>(type));
+  }
+  size_t size() const { return binders_.size(); }
+  std::pair<std::string, std::unique_ptr<TermType>>& get(int index) {
+    return binders_.at(index);
+  }
+
+ private:
+  std::vector<std::pair<std::string, std::unique_ptr<TermType>>> binders_;
+};
+
 // TermType.
 class TermType : public Locatable {
  public:
@@ -185,30 +202,39 @@ enum class TernaryTermToken {
 template<int N, typename TermToken>
 class NAryTerm : public Term {
  public:
-  NAryTerm(Location location) : Term(location) { }
+  NAryTerm(Location location, TermToken type)
+    : Term(location), type_(type) { }
 
   TermToken type() const { return type_; }
 
  protected:
-  /* const */ TermToken type_;
+  const TermToken type_;
   std::array<std::unique_ptr<Term>, N> terms_;
 };
 
 class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
  public:
-  NullaryTerm(Location location) : NAryTerm(location) { }
+  NullaryTerm(Location location, NullaryTermToken type)
+    : NAryTerm(location, type) { }
 };
 
 class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
  public:
-  UnaryTerm(Location location) : NAryTerm(location) { }
+  UnaryTerm(Location location, UnaryTermToken type, Term* term1)
+    : NAryTerm(location, type) {
+    terms_[0].reset(term1);
+  }
 
   const Term* term() const { return terms_[0].get(); }
 };
 
 class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
  public:
-  BinaryTerm(Location location) : NAryTerm(location) { }
+  BinaryTerm(Location location, BinaryTermToken type, Term* term1, Term* term2)
+    : NAryTerm(location, type) {
+    terms_[0].reset(term1);
+    terms_[1].reset(term2);
+  }
 
   const Term* term1() const { return terms_[0].get(); }
   const Term* term2() const { return terms_[1].get(); }
@@ -216,7 +242,12 @@ class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
 
 class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
  public:
-  TernaryTerm(Location location) : NAryTerm(location) { }
+  TernaryTerm(Location location, TernaryTermToken type, Term* term1, Term* term2, Term* term3)
+    : NAryTerm(location, type) {
+    terms_[0].reset(term1);
+    terms_[1].reset(term2);
+    terms_[2].reset(term3);
+  }
 
   const Term* term1() const { return terms_[0].get(); }
   const Term* term2() const { return terms_[1].get(); }
@@ -227,9 +258,9 @@ class RecordTerm : public Term {
  public:
   RecordTerm(Location location) : Term(location) { }
 
-  size_t length() const { return fields_.size(); }
+  size_t size() const { return fields_.size(); }
   std::pair<const std::string&, const Pattern*> get(int index) const {
-    return std::make_pair(fields_[index].first, fields_[index].second.get());
+    return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
   }
 
  private:
@@ -250,7 +281,8 @@ class ProjectTerm : public Term {
 
 class LetTerm : public Term {
  public:
-  LetTerm(Location location) : Term(location) { }
+  LetTerm(Location location, Pattern* pattern, Term* bind_term, Term* body_term)
+    : Term(location), pattern_(pattern), term1_(bind_term), term2_(body_term) { }
 
   const Pattern* pattern() const { return pattern_.get(); }
   const Term* bind_term() const { return term1_.get(); }
@@ -263,7 +295,8 @@ class LetTerm : public Term {
 
 class AbsTerm : public Term {
  public:
-  AbsTerm(Location location) : Term(location) { }
+  AbsTerm(Location location, const std::string& variable, TermType* type, Term* term)
+    : Term(location), variable_(variable), variable_type_(type), term_(term) { }
 
   const std::string& variable() const { return variable_; }
   const TermType* variable_type() const { return variable_type_.get(); }

@@ -85,6 +85,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include "common.h"
 #include "token.h"
@@ -97,7 +98,7 @@ class Stmt {
   virtual ~Stmt() = default;
 
  private:
-  Location location_;
+  const Location location_;
 };
 
 class EvalStmt final : public Stmt {
@@ -124,7 +125,7 @@ class Pattern {
   virtual void Accept(Visitor<Pattern>* visitor) = 0;
 
  private:
-  Location location_;
+  const Location location_;
 };
 
 class VariablePattern : public Pattern {
@@ -141,6 +142,11 @@ class RecordPattern : public Pattern {
   void Accept(Visitor<Pattern>* visitor) override { }
 };
 
+// TermType.
+class TermType {
+
+};
+
 // Term.
 class Term {
  public:
@@ -148,7 +154,7 @@ class Term {
   virtual ~Term() = default;
 
  private:
-  Location location_;
+  const Location location_;
 };
 
 enum class NullaryTermToken {
@@ -160,14 +166,16 @@ enum class UnaryTermToken {
 };
 
 enum class BinaryTermToken {
-  Cons,
+  Cons, App
 };
 
 enum class TernaryTermToken {
   If,
 };
 
-// true, false, variable, unit, zero, nil.
+// As it is verbose to write down all n-ary terms that take n terms, a better approach is to do some abstraction,
+// so we can group all n-ary terms together, through it is a little difficult to understand.
+// A NAryTerm takes N terms, like (type, term_1, term_2 ... term_N).
 template<int N, typename TermToken>
 class NAryTerm : public Term {
  public:
@@ -175,27 +183,100 @@ class NAryTerm : public Term {
 
   TermToken type() const { return type_; }
 
- private:
-  TermToken type_;
+ protected:
+  /* const */ TermToken type_;
   std::array<std::unique_ptr<Term>, N> terms_;
 };
 
-class PrimitiveTerm : public NAryTerm<0, NullaryTermToken> {
+class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
  public:
-  PrimitiveTerm(Location location) : NAryTerm(location) { }
+  NullaryTerm(Location location) : NAryTerm(location) { }
 };
 
 class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
  public:
   UnaryTerm(Location location) : NAryTerm(location) { }
+  
+  const Term* term() const { return terms_[0].get(); }
 };
 
 class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
  public:
   BinaryTerm(Location location) : NAryTerm(location) { }
+
+  const Term* term1() const { return terms_[0].get(); }
+  const Term* term2() const { return terms_[1].get(); }
 };
 
 class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
  public:
   TernaryTerm(Location location) : NAryTerm(location) { }
+
+  const Term* term1() const { return terms_[0].get(); }
+  const Term* term2() const { return terms_[1].get(); }
+  const Term* term3() const { return terms_[2].get(); }
+};
+
+class RecordTerm : public Term {
+ public:
+  RecordTerm(Location location) : Term(location) { }
+
+  size_t length() const { return fields_.size(); }
+  std::pair<const std::string&, const Pattern*> get(int index) const {
+    return std::make_pair(fields_[index].first, fields_[index].second.get());
+  }
+
+ private:
+  std::vector<std::pair<std::string, std::unique_ptr<Pattern>>> fields_;
+};
+
+class ProjectTerm : public Term {
+ public:
+  ProjectTerm(Location location) : Term(location) { }
+
+  const Term* term() const { return term_.get(); }
+  const std::string& field() const { return field_; }
+
+ private:
+  const std::unique_ptr<Term> term_;
+  const std::string field_;
+};
+
+class LetTerm : public Term {
+ public:
+  LetTerm(Location location) : Term(location) { }
+  
+  const Pattern* pattern() const { return pattern_.get(); }
+  const Term* bind_term() const { return term1_.get(); }
+  const Term* body_term() const { return term2_.get(); }
+
+ private:
+  const std::unique_ptr<Pattern> pattern_;
+  const std::unique_ptr<Term> term1_, term2_;
+};
+
+class AbsTerm : public Term {
+ public:
+  AbsTerm(Location location) : Term(location) { }
+
+  const std::string& variable() const { return variable_; }
+  const TermType* variable_type() const { return variable_type_.get(); }
+  const Term* term() const { return term_.get(); }
+
+ private:
+  const std::string variable_;
+  const std::unique_ptr<TermType> variable_type_;
+  const std::unique_ptr<Term> term_;
+};
+
+class AscribeTerm : public Term {
+ public:
+  AscribeTerm(Location location) : Term(location) { }
+
+  const Term* term() const { return term_.get(); }
+  const TermType* ascribe_type() const { return ascribe_type_.get(); }
+
+ private:
+  const std::unique_ptr<Term> term_;
+  const std::unique_ptr<TermType> ascribe_type_;
 };

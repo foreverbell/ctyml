@@ -64,7 +64,7 @@ void Context::DropBindings(size_t n) {
   }
 }
 
-string Context::PickFreshName(const std::string& name) {
+string Context::PickFreshName(const string& name) {
   string fresh;
   bindings_const_iterator iter = index_map_.find(name);
 

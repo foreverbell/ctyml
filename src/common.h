@@ -1,8 +1,18 @@
 #pragma once
 
 struct Location {
-  const size_t line_number;
-  const size_t line_offset;
+  const ssize_t begin;
+  const ssize_t end;
 
-  Location(size_t number, size_t offset) : line_number(number), line_offset(offset) { }
+  Location() : begin(-1), end(-1) { }
+  Location(ssize_t begin, ssize_t end) : begin(begin), end(end) { }
+};
+
+class Locatable {
+ public:
+  Locatable(Location location) : location_(location) { }
+  Location location() const { return location_; }
+
+ protected:
+  Location location_;
 };

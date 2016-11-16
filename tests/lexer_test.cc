@@ -2,13 +2,11 @@
 
 #include <gtest/gtest.h>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
 
 using std::string;
-using std::stringstream;
 using std::tuple;
 using std::unique_ptr;
 using std::vector;
@@ -31,26 +29,24 @@ token_tuple create_id(const string& id) {
 class LexerTest : public ::testing::Test {
  protected:
   void test(const string& input, const vector<token_tuple>& expected) {
-    stringstream ss(input);
-    vector<string> inputs;
-    string buffer;
-    vector<unique_ptr<Token>> tokens;
+    lexer.reset(Lexer::Create(input));
+    ASSERT_TRUE(lexer != nullptr);
 
-    while (std::getline(ss, buffer)) {
-      inputs.push_back(std::move(buffer));
-    }
-    ASSERT_TRUE(ScanTokens(inputs, &tokens));
-    ASSERT_EQ(expected.size(), tokens.size());
+    ASSERT_EQ(expected.size(), lexer->size());
     for (size_t i = 0; i < expected.size(); ++i) {
-      EXPECT_EQ(std::get<0>(expected[i]), tokens[i]->type());
-      if (tokens[i]->is_int()) {
-        EXPECT_EQ(std::get<1>(expected[i]), tokens[i]->number());
+      const Token* token = lexer->get(i);
+      EXPECT_EQ(std::get<0>(expected[i]), token->type());
+      if (token->is_int()) {
+        EXPECT_EQ(std::get<1>(expected[i]), token->number());
       }
-      if (tokens[i]->is_id()) {
-        EXPECT_EQ(std::get<2>(expected[i]), tokens[i]->identifier());
+      if (token->is_id()) {
+        EXPECT_EQ(std::get<2>(expected[i]), token->identifier());
       }
     }
   }
+
+ private:
+  unique_ptr<Lexer> lexer;
 };
 
 TEST_F(LexerTest, KeywordsTest) {

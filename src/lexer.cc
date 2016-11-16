@@ -52,30 +52,35 @@ const unordered_map<char, TokenType> onechar_list = {
   {']', TokenType::RBracket},
 };
 
-size_t ParseNumber(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
-  assert(isdigit(line[line_offset]));
+bool is_whitespaces(char ch) {
+  return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
+}  // namespace
+
+size_t Lexer::ParseNumber(size_t offset, unique_ptr<Token>* token) {
+  assert(isdigit(input_[offset]));
 
   int number = 0;
   size_t advance = 0;
-  while (line_offset + advance < line.length() && isdigit(line[line_offset + advance])) {
-    number = number * 10 + line[line_offset + advance] - '0';
+  while (offset + advance < input_.length() && isdigit(input_[offset + advance])) {
+    number = number * 10 + input_[offset + advance] - '0';
     advance += 1;
   }
 
-  Token* t = Token::CreateInt(Location(line_number, line_offset), number);
-  if (t == nullptr) {
+  token->reset(Token::CreateInt(Location(offset, offset + advance), number));
+  if (token == nullptr) {
     return 0;
   }
-  token->reset(t);
   return advance;
 }
 
-size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
-  assert(isalpha(line[line_offset]));
+size_t Lexer::ParseIdentifer(size_t offset, unique_ptr<Token>* token) {
+  assert(isalpha(input_[offset]));
 
   size_t advance = 1;
-  while (line_offset + advance < line.length()) {
-    char ch = line[line_offset + advance];
+  while (offset + advance < input_.length()) {
+    char ch = input_[offset + advance];
     if (isdigit(ch) || isalpha(ch) || ch == '_' || ch == '\'') {
       ++advance;
     } else {
@@ -83,84 +88,72 @@ size_t ParseIdentifer(const string& line, size_t line_number, size_t line_offset
     }
   }
 
-  const string identifier = line.substr(line_offset, advance);
-  const Location location = Location(line_number, line_offset);
+  const string identifier = input_.substr(offset, advance);
+  const Location location = Location(offset, offset + advance);
   const unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
-  Token* t = nullptr;
-  if (iter == keyword_list.end()) {
-    t = Token::CreateId(location, identifier);
-  } else {
-    t = Token::Create(iter->second, location);
-  }
-  if (t == nullptr) {
+  token->reset(iter == keyword_list.end() ? Token::CreateId(location, identifier)
+                                          : Token::Create(iter->second, location));
+  if (token == nullptr) {
     return 0;
   }
-  token->reset(t);
   return advance;
 }
 
 // Parses a single token, and returns the advance delta of line offset.
-size_t ParseToken(const string& line, size_t line_number, size_t line_offset, unique_ptr<Token>* token) {
-#define create_token(token_type) \
+size_t Lexer::ParseToken(size_t offset, unique_ptr<Token>* token) {
+#define create_token(token_type, length) \
   do { \
-    Token* t = Token::Create(token_type, Location(line_number, line_offset)); \
-    if (t == nullptr) { \
+    token->reset(Token::Create(token_type, Location(offset, offset + length))); \
+    if (token == nullptr) { \
       return 0; \
     } \
-    token->reset(t); \
+    return length; \
   } while (false)
 
   // Handle single char token.
-  const unordered_map<char, TokenType>::const_iterator iter = onechar_list.find(line[line_offset]);
+  const unordered_map<char, TokenType>::const_iterator iter = onechar_list.find(input_[offset]);
   if (iter != onechar_list.end()) {
-    create_token(iter->second);
-    return 1;
+    create_token(iter->second, 1);
   }
 
   // Handle multiple char token, natural number, identifier.
-  if (line_offset + 1 < line.length() && line[line_offset] == '-' && line[line_offset + 1] == '>') {
-    create_token(TokenType::Arrow);
-    return 2;
+  if (offset + 1 < input_.length() && input_[offset] == '-' && input_[offset + 1] == '>') {
+    create_token(TokenType::Arrow, 2);
   }
 
 #undef create_token
 
-  if (isdigit(line[line_offset])) {
-    return ParseNumber(line, line_number, line_offset, token);
+  if (isdigit(input_[offset])) {
+    return ParseNumber(offset, token);
   }
 
-  if (isalpha(line[line_offset])) {
-    return ParseIdentifer(line, line_number, line_offset, token);
+  if (isalpha(input_[offset])) {
+    return ParseIdentifer(offset, token);
   }
 
   return 0;
 }
 
-}  // namespace
-
-bool ScanTokens(const vector<string>& input, vector<unique_ptr<Token>>* tokens) {
-  size_t line_number = 0;
-  size_t line_offset = 0;
+/* static */
+Lexer* Lexer::Create(const string& input) {
+  unique_ptr<Lexer> lexer(new Lexer(input));
+  size_t offset = 0;
   unique_ptr<Token> token;
 
-  for (const string& line : input) {
-    ++line_number;
-    line_offset = 0;
-    while (line_offset < line.length()) {
-      // Skip white spaces.
-      if (line[line_offset] == ' ' || line[line_offset] == '\t') {
-        ++line_offset;
-        continue;
-      }
-      const int advance = ParseToken(line, line_number, line_offset, &token);
-      if (advance == 0) {
-        return false;
-      } else {
-        tokens->push_back(std::move(token));
-        line_offset += advance;
-      }
+  while (offset < lexer->input_.length()) {
+    // Skip white spaces.
+    if (is_whitespaces(lexer->input()[offset])) {
+      ++offset;
+      continue;
+    }
+    const int advance = lexer->ParseToken(offset, &token);
+    if (advance == 0) {
+      return nullptr;
+    } else {
+      lexer->tokens_.push_back(std::move(token));
+      offset += advance;
     }
   }
 
-  return true;
+  return lexer.release();
 }

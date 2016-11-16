@@ -92,7 +92,7 @@ size_t Lexer::ParseIdentifer(size_t offset, unique_ptr<Token>* token) {
   const Location location = Location(offset, offset + advance);
   const unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
   token->reset(iter == keyword_list.end() ? Token::CreateId(location, identifier)
-                                          : Token::Create(iter->second, location));
+                                          : Token::Create(location, iter->second));
   if (token == nullptr) {
     return 0;
   }
@@ -103,7 +103,7 @@ size_t Lexer::ParseIdentifer(size_t offset, unique_ptr<Token>* token) {
 size_t Lexer::ParseToken(size_t offset, unique_ptr<Token>* token) {
 #define create_token(token_type, length) \
   do { \
-    token->reset(Token::Create(token_type, Location(offset, offset + length))); \
+    token->reset(Token::Create(Location(offset, offset + length), token_type)); \
     if (token == nullptr) { \
       return 0; \
     } \

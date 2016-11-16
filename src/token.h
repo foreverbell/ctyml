@@ -22,24 +22,24 @@ enum class TokenType {
   Arrow, Dot, Comma, Colon, Semi, Eq, UScore,
 };
 
-class Token final {
+class Token final : public Locatable {
  public:
   Token() = delete;
   Token(const Token&) = delete;
   Token& operator=(const Token&) = delete;
 
-  static Token* Create(TokenType type, Location location) {
+  static Token* Create(Location location, TokenType type) {
     if (type == TokenType::Int || type == TokenType::LCaseId || type == TokenType::UCaseId) {
       return nullptr;
     }
-    return new Token(type, location, -1, "");
+    return new Token(location, type, -1, "");
   }
 
   static Token* CreateInt(Location location, int number) {
     if (number < 0) {
       return nullptr;
     }
-    return new Token(TokenType::Int, location, number, "");
+    return new Token(location, TokenType::Int, number, "");
   }
 
   static Token* CreateId(Location location, const std::string& id) {
@@ -52,7 +52,7 @@ class Token final {
         return nullptr;
       }
     }
-    return new Token(id[0] >= 'A' && id[0] <= 'Z' ? TokenType::UCaseId : TokenType::LCaseId, location, -1, id);
+    return new Token(location, id[0] >= 'A' && id[0] <= 'Z' ? TokenType::UCaseId : TokenType::LCaseId, -1, id);
   }
 
   TokenType type() const { return type_; }
@@ -72,11 +72,10 @@ class Token final {
   }
 
  private:
-  Token(TokenType type, Location location, int number, const std::string& identifier)
-    : type_(type), location_(location), number_(number), identifier_(identifier) { }
+  Token(Location location, TokenType type, int number, const std::string& identifier)
+    : Locatable(location), type_(type), number_(number), identifier_(identifier) { }
 
   const TokenType type_;
-  const Location location_;
 
   const int number_;
   const std::string identifier_;

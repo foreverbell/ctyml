@@ -30,3 +30,18 @@ class Lexer {
   Locator locator_;
   std::vector<std::unique_ptr<Token>> tokens_;
 };
+
+class LexerIterator {
+ public:
+  LexerIterator(const Lexer* lexer) : lexer_(lexer), offset_(0) { }
+
+  void reset() { offset_ = 0; }
+  const Token* peak() const { return eof() ? nullptr : lexer_->get(offset_); }
+  const Token* pop() { const Token* cur = peak(); ++offset_; return cur; }
+  size_t size() const { return lexer_->size(); }
+  bool eof() const { return offset_ >= size(); }
+
+ private:
+  const Lexer* const lexer_;
+  int offset_;
+};

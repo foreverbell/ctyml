@@ -7,14 +7,14 @@
 //
 // Statement = Term
 //           | 'type' ucid '=' Type
-//           | 'let' LetBinder
-//           | 'letrec' LetrecBinder
+//           | 'let' Pattern '=' Term
+//           | 'letrec' TypedBinder '=' Term
 //
 // Term = AppTerm
 //      | 'lambda' TypedBinders '.' Term
 //      | 'if' Term 'then' Term 'else' Term
-//      | 'let' LetBinder 'in' Term
-//      | 'letrec' LetrecBinder 'in' Term
+//      | 'let' Pattern '=' Term 'in' Term
+//      | 'letrec' TypedBinder '=' Term 'in' Term
 //
 // TypedBinders = TypedBinder
 //              | TypedBinder TypedBinders
@@ -30,10 +30,6 @@
 //               | FieldPattern ',' FieldPatterns
 //
 // FieldPattern = Pattern '=' lcid
-//
-// LetBinder = Pattern '=' Term
-//
-// LetrecBinder = TypedBinder '=' Term
 //
 // AppTerm = PathTerm
 //         | AppTerm PathTerm
@@ -87,45 +83,56 @@
 #include <memory>
 #include <vector>
 
+#include "error.h"
 #include "location.h"
 #include "token.h"
 #include "visitor.h"
 
-// Statement.
-class Stmt {
- public:
-  Stmt(Location location) : location_(location) { }
-  virtual ~Stmt() = default;
+class Stmt;
+class Pattern;
+class Term;
+class TermType;
 
- private:
-  const Location location_;
+// Statement.
+class Stmt : public Locatable {
+ public:
+  Stmt(Location location) : Locatable(location) { }
+  virtual ~Stmt() = default;
 };
 
 class EvalStmt final : public Stmt {
  public:
-  EvalStmt(Location location) : Stmt(location) { }
+  EvalStmt(Location location, Term* term)
+    : Stmt(location), term_(term) { }
+ private:
+  std::unique_ptr<Term> term_;
 };
 
 class BindTermStmt final : public Stmt {
  public:
-  BindTermStmt(Location location) : Stmt(location) { }
+  BindTermStmt(Location location, Pattern* pattern, Term* term)
+    : Stmt(location), pattern_(pattern), term_(term) { }
+ private:
+  std::unique_ptr<Pattern> pattern_;
+  std::unique_ptr<Term> term_;
 };
 
 class BindTypeStmt final : public Stmt {
  public:
-  BindTypeStmt(Location location) : Stmt(location) { }
+  BindTypeStmt(Location location, const std::string& type_alias, TermType* type)
+    : Stmt(location), type_alias_(type_alias), type_(type) { }
+ private:
+  std::string type_alias_;
+  std::unique_ptr<TermType> type_;
 };
 
 // Pattern.
-class Pattern {
+class Pattern : public Locatable {
  public:
-  Pattern(Location location) : location_(location) { }
+  Pattern(Location location) : Locatable(location) { }
   virtual ~Pattern() = default;
 
   virtual void Accept(Visitor<Pattern>* visitor) = 0;
-
- private:
-  const Location location_;
 };
 
 class VariablePattern : public Pattern {
@@ -143,18 +150,17 @@ class RecordPattern : public Pattern {
 };
 
 // TermType.
-class TermType {
-
+class TermType : public Locatable {
+ public:
+  TermType(Location location) : Locatable(location) { }
+  virtual ~TermType() = default;
 };
 
 // Term.
-class Term {
+class Term : public Locatable {
  public:
-  Term(Location location) : location_(location) { }
+  Term(Location location) : Locatable(location) { }
   virtual ~Term() = default;
-
- private:
-  const Location location_;
 };
 
 enum class NullaryTermToken {
@@ -196,7 +202,7 @@ class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
 class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
  public:
   UnaryTerm(Location location) : NAryTerm(location) { }
-  
+
   const Term* term() const { return terms_[0].get(); }
 };
 
@@ -245,7 +251,7 @@ class ProjectTerm : public Term {
 class LetTerm : public Term {
  public:
   LetTerm(Location location) : Term(location) { }
-  
+
   const Pattern* pattern() const { return pattern_.get(); }
   const Term* bind_term() const { return term1_.get(); }
   const Term* body_term() const { return term2_.get(); }

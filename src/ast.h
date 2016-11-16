@@ -87,7 +87,7 @@
 #include <memory>
 #include <vector>
 
-#include "common.h"
+#include "location.h"
 #include "token.h"
 #include "visitor.h"
 

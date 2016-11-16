@@ -3,7 +3,7 @@
 #include <cassert>
 #include <string>
 
-#include "common.h"
+#include "location.h"
 
 enum class TokenType {
   Int,               // With a natural integer number.

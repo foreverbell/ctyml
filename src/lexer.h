@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "common.h"
+#include "location.h"
 #include "token.h"
 
 class Lexer {
@@ -20,12 +20,13 @@ class Lexer {
   const Token* get(int index) const { return tokens_.at(index).get(); }
 
  private:
-  Lexer(const std::string& input) : input_(input) { }
+  Lexer(const std::string& input) : input_(input), locator_(input) { }
 
   size_t ParseNumber(size_t offset, std::unique_ptr<Token>* token);
   size_t ParseIdentifer(size_t offset, std::unique_ptr<Token>* token);
   size_t ParseToken(size_t offset, std::unique_ptr<Token>* token);
 
   const std::string input_;
+  Locator locator_;
   std::vector<std::unique_ptr<Token>> tokens_;
 };

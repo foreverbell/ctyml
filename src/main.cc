@@ -1,7 +1,7 @@
 #include <cstdio>
 
 #include "ast.h"
-#include "common.h"
+#include "location.h"
 #include "token.h"
 
 using namespace std;

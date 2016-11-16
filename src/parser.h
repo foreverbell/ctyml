@@ -1,10 +1,15 @@
 #pragma once
 
-#include <memory>
-#include <vector>
+class Lexer;
 
-#include "token.h"
+class Parser {
+ public:
+  Parser(const Lexer* lexer) : lexer_(lexer) { }
+  Parser(const Parser&) = delete;
+  Parser& operator=(const Parser&) = delete;
 
+  const Lexer* lexer() const { return lexer_; }
 
-
-bool ParseToken(const std::vector<std::unique_ptr<Token>>& tokens);
+ private:
+  const Lexer* const lexer_;  // not owned.
+};

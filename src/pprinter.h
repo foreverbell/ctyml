@@ -6,6 +6,8 @@
 #include "ast.h"
 #include "visitor.h"
 
+class Context;
+
 class PrettyPrinter : public Visitor<TermType> {
  public:
   void Visit(BoolTermType*) override;
@@ -18,4 +20,5 @@ class PrettyPrinter : public Visitor<TermType> {
 
  private:
   std::unordered_map<const TermType*, std::string> pprints_;
+  const Context* ctx_;
 };

@@ -18,7 +18,11 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
 namespace {
 namespace LL {
 
-#define declare_cfg(cfg) \
+// The grammar of our tiny PL is able to be parsed in LL(1) parser.
+// For each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed. Otherwise
+// just returns a null pointer.
+
+#define cfg_scope(cfg) \
   static const string CFG = cfg
 
 #define assign(v, expr) \
@@ -74,8 +78,6 @@ namespace LL {
   } while (false); \
   to = lexer->pop()->number()
 
-// Only throws exception if commits to this branch, i.e. some tokens are consumed.
-
 StmtPtr Statement(LexerIterator*, Context*);
 PatternPtr Pattern(LexerIterator*, Context*);
 TypedBindersPtr TypedBinders(LexerIterator*, Context*);
@@ -88,7 +90,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
 
   switch (token->type()) {
     case TokenType::TypeAlias: {
-      declare_cfg(R"(Statement = 'type' ucid '=' Type;)");
+      cfg_scope(R"(Statement = 'type' ucid '=' Type;)");
       TermTypePtr type;
 
       lexer->pop();
@@ -99,7 +101,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       return StmtPtr(new BindTypeStmt(Location(token->location(), lexer->last()->location()), ucid, type.release()));
     }
     case TokenType::Let: {
-      declare_cfg(R"(Statement = 'let' Pattern '=' Term;)");
+      cfg_scope(R"(Statement = 'let' Pattern '=' Term;)");
       PatternPtr pattern;
       TermPtr term;
 
@@ -113,10 +115,10 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
         return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
                                         pattern.release(), term.release()));
       } else {
-        declare_cfg(R"(Statement = Term;)");
+        cfg_scope(R"(Statement = Term;)");
         TermPtr stmt_term;
         assign_or_throw(stmt_term, [&]() -> TermPtr {
-          declare_cfg(R"(Term = 'let' Pattern '=' Term 'in' Term)");
+          cfg_scope(R"(Term = 'let' Pattern '=' Term 'in' Term)");
           TermPtr body;
           pop_or_throw(TokenType::In);
           assign_or_throw(body, Term(lexer, ctx));
@@ -133,7 +135,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       return nullptr;
     }
     default: {
-      declare_cfg(R"(Statement = Term)");
+      cfg_scope(R"(Statement = Term)");
       TermPtr term;
 
       assign_or_throw(term, Term(lexer, ctx));
@@ -156,7 +158,7 @@ TypedBindersPtr TypedBinder(LexerIterator* lexer, Context* ctx) {
   TypedBindersPtr binder;
 
   if (token->type() == TokenType::LCaseId) {
-    declare_cfg(R"(TypedBinder = lcid ':' Type)");
+    cfg_scope(R"(TypedBinder = lcid ':' Type)");
 
     pop_lcid_or_throw(const string& lcid);
     pop_or_throw(TokenType::Colon);
@@ -166,7 +168,7 @@ TypedBindersPtr TypedBinder(LexerIterator* lexer, Context* ctx) {
     ctx->AddName(lcid);
     return binder;
   } else if (token->type() == TokenType::UScore) {
-    declare_cfg(R"(TypedBinder = '_' ':' Type)");
+    cfg_scope(R"(TypedBinder = '_' ':' Type)");
 
     pop_or_throw(TokenType::UScore);
     pop_or_throw(TokenType::Colon);
@@ -180,7 +182,7 @@ TypedBindersPtr TypedBinder(LexerIterator* lexer, Context* ctx) {
 }
 
 TypedBindersPtr TypedBinders(LexerIterator* lexer, Context* ctx) {
-  declare_cfg(R"(TypedBinders = TypedBinder | TypedBinder TypedBinders)");
+  cfg_scope(R"(TypedBinders = TypedBinder | TypedBinder TypedBinders)");
 
   TypedBindersPtr binders = nullptr, cur;
   while (true) {
@@ -216,7 +218,7 @@ TypedBindersPtr TypedBinders(LexerIterator* lexer, Context* ctx) {
 
 TermTypePtr FieldTypes(LexerIterator* lexer, Context* ctx) {
   auto FieldType = [](LexerIterator* lexer, Context* ctx) -> unique_ptr<RecordTermType> {
-    declare_cfg(R"(FieldType = lcid ':' Type)");
+    cfg_scope(R"(FieldType = lcid ':' Type)");
     const Token* token = lexer->peak();
     if (token == nullptr || token->type() != TokenType::LCaseId) {
       return nullptr;
@@ -232,7 +234,7 @@ TermTypePtr FieldTypes(LexerIterator* lexer, Context* ctx) {
     return field;
   };
 
-  declare_cfg(R"(FieldTypes = FieldType | FieldType ',' FieldTypes)");
+  cfg_scope(R"(FieldTypes = FieldType | FieldType ',' FieldTypes)");
   std::unique_ptr<RecordTermType> fields, cur;
 
   assign(fields, FieldType(lexer, ctx));
@@ -252,7 +254,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
 
   switch (token->type()) {
     case TokenType::LParen: {
-      declare_cfg(R"(AtomicType = '(' Type ')')");
+      cfg_scope(R"(AtomicType = '(' Type ')')");
       TermTypePtr type;
 
       pop_or_throw(TokenType::LParen);
@@ -262,22 +264,22 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       return type;
     }
     case TokenType::Bool: {
-      declare_cfg(R"(AtomicType = 'Bool')");
+      cfg_scope(R"(AtomicType = 'Bool')");
       pop_or_throw(TokenType::Bool);
       return TermTypePtr(new BoolTermType(token->location()));
     }
     case TokenType::Nat: {
-      declare_cfg(R"(AtomicType = 'Nat')");
+      cfg_scope(R"(AtomicType = 'Nat')");
       pop_or_throw(TokenType::Nat);
       return TermTypePtr(new NatTermType(token->location()));
     }
     case TokenType::Unit: {
-      declare_cfg(R"(AtomicType = 'Unit')");
+      cfg_scope(R"(AtomicType = 'Unit')");
       pop_or_throw(TokenType::Unit);
       return TermTypePtr(new UnitTermType(token->location()));
     }
     case TokenType::List: {
-      declare_cfg(R"(AtomicType ='List' '[' Type ']')");
+      cfg_scope(R"(AtomicType ='List' '[' Type ']')");
       TermTypePtr type;
 
       pop_or_throw(TokenType::List);
@@ -287,7 +289,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       return TermTypePtr(new ListTermType(Location(token->location(), lexer->last()->location()), type.release()));
     }
     case TokenType::LCurly: {
-      declare_cfg(R"(AtomicType = {' FieldTypes '}')");
+      cfg_scope(R"(AtomicType = {' FieldTypes '}')");
       TermTypePtr type;
 
       pop_or_throw(TokenType::LCurly);
@@ -297,7 +299,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       return type;
     }
     case TokenType::UCaseId: {
-      declare_cfg(R"(AtomicType = ucid)");
+      cfg_scope(R"(AtomicType = ucid)");
       pop_ucid_or_throw(const string& ucid);
       int index = ctx->ToIndex(ucid);
       if (index == -1) throw ast_exception(lexer->last()->location(), CFG, "type <" + ucid + "> is not found");
@@ -310,7 +312,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
 }
 
 TermTypePtr ArrowType(LexerIterator* lexer, Context* ctx) {
-  declare_cfg(R"(ArrowType = AtomicType)");
+  cfg_scope(R"(ArrowType = AtomicType)");
 
   TermTypePtr type1, type2;
   assign(type1, AtomicType(lexer, ctx));
@@ -320,7 +322,7 @@ TermTypePtr ArrowType(LexerIterator* lexer, Context* ctx) {
   if (token == nullptr || token->type() != TokenType::Arrow) {
     return type1;
   } else {
-    declare_cfg(R"(ArrowType = AtomicType '->' ArrowType)");
+    cfg_scope(R"(ArrowType = AtomicType '->' ArrowType)");
     pop_or_throw(TokenType::Arrow);
     assign_or_throw(type2, ArrowType(lexer, ctx));
     Location location(type1.get(), type2.get());
@@ -329,7 +331,7 @@ TermTypePtr ArrowType(LexerIterator* lexer, Context* ctx) {
 }
 
 TermTypePtr Type(LexerIterator* lexer, Context* ctx) {
-  declare_cfg(R"(Type = ArrowType)");
+  cfg_scope(R"(Type = ArrowType)");
 
   TermTypePtr type;
   assign(type, ArrowType(lexer, ctx));
@@ -348,7 +350,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
 
   switch (token->type()) {
     case TokenType::Lambda: {
-      declare_cfg(R"(Term = 'lambda' TypedBinders '.' Term)");
+      cfg_scope(R"(Term = 'lambda' TypedBinders '.' Term)");
       TypedBindersPtr binders;
       TermPtr term;
 
@@ -363,7 +365,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       return term;
     }
     case TokenType::If: {
-      declare_cfg(R"(Term = 'if' Term 'then' Term 'else' Term)");
+      cfg_scope(R"(Term = 'if' Term 'then' Term 'else' Term)");
       TermPtr term1, term2, term3;
 
       lexer->pop();

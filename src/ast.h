@@ -174,30 +174,38 @@ class TypedBinders : public Locatable {
 };
 
 // TermType.
-class TermType : public Locatable {
+class TermType : public Locatable, public virtual Visitable<TermType> {
  public:
   TermType(Location location) : Locatable(location) { }
   virtual ~TermType() = default;
+
+  // ast_level() denotes the level of this TermType node in AST.
+  // Currently there are two levels, ArrowType(1) and AtomicType(2).
+  virtual int ast_level() const = 0;
 };
 
-class BoolTermType : public TermType {
+class BoolTermType : public TermType, public VisitableImpl<TermType, BoolTermType> {
  public:
   BoolTermType(Location location) : TermType(location) { }
+  int ast_level() const override { return 2; }
 };
 
-class NatTermType : public TermType {
+class NatTermType : public TermType, public VisitableImpl<TermType, NatTermType> {
  public:
   NatTermType(Location location) : TermType(location) { }
+  int ast_level() const override { return 2; }
 };
 
-class UnitTermType : public TermType {
+class UnitTermType : public TermType, public VisitableImpl<TermType, UnitTermType> {
  public:
   UnitTermType(Location location) : TermType(location) { }
+  int ast_level() const override { return 2; }
 };
 
-class ListTermType : public TermType {
+class ListTermType : public TermType, public VisitableImpl<TermType, ListTermType> {
  public:
   ListTermType(Location location, TermType* type) : TermType(location), type_(type) { }
+  int ast_level() const override { return 2; }
 
   TermType* type() const { return type_.get(); }
 
@@ -205,9 +213,10 @@ class ListTermType : public TermType {
   std::unique_ptr<TermType> type_;
 };
 
-class RecordTermType : public TermType {
+class RecordTermType : public TermType, public VisitableImpl<TermType, RecordTermType> {
  public:
   RecordTermType(Location location) : TermType(location) { }
+  int ast_level() const override { return 2; }
 
   void merge(RecordTermType&& type) {
     for (size_t i = 0; i < type.size(); ++i) {
@@ -228,10 +237,11 @@ class RecordTermType : public TermType {
   std::vector<std::pair<std::string, std::unique_ptr<TermType>>> fields_;
 };
 
-class ArrowTermType : public TermType {
+class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermType> {
  public:
   ArrowTermType(Location location, TermType* type1, TermType* type2)
     : TermType(location), type1_(type1), type2_(type2) { }
+  int ast_level() const override { return 1; }
 
   TermType* type1() const { return type1_.get(); }
   TermType* type2() const { return type2_.get(); }
@@ -240,9 +250,10 @@ class ArrowTermType : public TermType {
   std::unique_ptr<TermType> type1_, type2_;
 };
 
-class UserDefinedType : public TermType {
+class UserDefinedType : public TermType, public VisitableImpl<TermType, UserDefinedType> {
  public:
   UserDefinedType(Location location, int index) : TermType(location), index_(index) { }
+  int ast_level() const override { return 2; }
 
   int index() const { return index_; }
 

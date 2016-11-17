@@ -154,9 +154,16 @@ class TypedBinders : public Locatable {
  public:
   TypedBinders(Location location) : Locatable(location) { }
 
+  void merge(TypedBinders&& binders) {
+    for (size_t i = 0; i < binders.size(); ++i) {
+      add(std::move(binders.get(i).first), binders.get(i).second.release());
+    }
+  }
+
   void add(const std::string& variable, TermType* type) {
     binders_.emplace_back(variable, std::unique_ptr<TermType>(type));
   }
+
   size_t size() const { return binders_.size(); }
   std::pair<std::string, std::unique_ptr<TermType>>& get(int index) {
     return binders_.at(index);
@@ -173,6 +180,76 @@ class TermType : public Locatable {
   virtual ~TermType() = default;
 };
 
+class BoolTermType : public TermType {
+ public:
+  BoolTermType(Location location) : TermType(location) { }
+};
+
+class NatTermType : public TermType {
+ public:
+  NatTermType(Location location) : TermType(location) { }
+};
+
+class UnitTermType : public TermType {
+ public:
+  UnitTermType(Location location) : TermType(location) { }
+};
+
+class ListTermType : public TermType {
+ public:
+  ListTermType(Location location, TermType* type) : TermType(location), type_(type) { }
+
+  TermType* type() const { return type_.get(); }
+
+ private:
+  std::unique_ptr<TermType> type_;
+};
+
+class RecordTermType : public TermType {
+ public:
+  RecordTermType(Location location) : TermType(location) { }
+
+  void merge(RecordTermType&& type) {
+    for (size_t i = 0; i < type.size(); ++i) {
+      add(type.fields_[i].first, type.fields_[i].second.release());
+    }
+  }
+
+  void add(const std::string& field, TermType* type) {
+    fields_.push_back(std::make_pair(field, std::unique_ptr<TermType>(type)));
+  }
+
+  size_t size() const { return fields_.size(); }
+  std::pair<const std::string&, TermType*> get(int index) const {
+    return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
+  }
+
+ private:
+  std::vector<std::pair<std::string, std::unique_ptr<TermType>>> fields_;
+};
+
+class ArrowTermType : public TermType {
+ public:
+  ArrowTermType(Location location, TermType* type1, TermType* type2)
+    : TermType(location), type1_(type1), type2_(type2) { }
+
+  TermType* type1() const { return type1_.get(); }
+  TermType* type2() const { return type2_.get(); }
+
+ private:
+  std::unique_ptr<TermType> type1_, type2_;
+};
+
+class UserDefinedType : public TermType {
+ public:
+  UserDefinedType(Location location, int index) : TermType(location), index_(index) { }
+
+  int index() const { return index_; }
+
+ private:
+  int index_;
+};
+
 // Term.
 class Term : public Locatable {
  public:
@@ -181,7 +258,7 @@ class Term : public Locatable {
 };
 
 enum class NullaryTermToken {
-  True, False, Variable, Unit, Zero, Nil,
+  True, False, UserDefined /* Variable */, Unit, Zero, Nil,
 };
 
 enum class UnaryTermToken {

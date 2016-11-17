@@ -10,6 +10,11 @@ class ast_exception : public std::exception {
     cfgs_.push_back(std::move(cfg));
   }
 
+  ast_exception(Location location, std::string cfg, std::string error)
+    : location_(location), error_(std::move(error)) {
+    cfgs_.push_back(std::move(cfg));
+  }
+
   ast_exception(ast_exception&& e, std::string cfg)
     : cfgs_(std::move(e.cfgs_)), location_(e.location_) {
     cfgs_.push_back(std::move(cfg));
@@ -18,7 +23,12 @@ class ast_exception : public std::exception {
   virtual ~ast_exception() throw () { }
 
   virtual const char* what() const throw () {
-    if (!cfgs_.empty() && msg_.empty()) {
+    if (!is_msg_set_) {
+      is_msg_set_ = true;
+      if (!error_.empty()) {
+        msg_.append(error_);
+        msg_.append("\n");
+      }
       for (const std::string& cfg : cfgs_) {
         msg_.append(cfg);
         msg_.append("\n");
@@ -34,6 +44,8 @@ class ast_exception : public std::exception {
   // Context free grammars, from bottom to up.
   std::vector<std::string> cfgs_;
   const Location location_;
+  std::string error_;
 
   mutable std::string msg_;
+  mutable bool is_msg_set_ = false;
 };

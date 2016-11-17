@@ -407,7 +407,7 @@ vector<StmtPtr> Parser::ParseAST() {
       throw ast_exception(std::move(e), CFG);
     }
     if (stmt == nullptr) {
-      throw ast_exception(lexer_iter.location(), CFG); 
+      throw ast_exception(lexer_iter.location(), CFG);
     }
     stmts.push_back(std::move(stmt));
   } while (!lexer_iter.eof());

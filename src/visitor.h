@@ -6,7 +6,7 @@ class Visitor;
 template<class Base>
 class Visitable {
  public:
-  virtual void Accept(Visitor<Base>* visitor) = 0;
+  virtual void Accept(Visitor<Base>* visitor) const = 0;
 };
 
 // Virtual inheritance is required to solve the diamond inheritance issue.
@@ -27,8 +27,8 @@ class Visitable {
 template<class Base, class Derived>
 class VisitableImpl : public virtual Visitable<Base> {
  public:
-  void Accept(Visitor<Base>* visitor) override {
-    visitor->Visit(static_cast<Derived*>(this));
+  void Accept(Visitor<Base>* visitor) const override {
+    visitor->Visit(static_cast<const Derived*>(this));
   }
 };
 
@@ -40,8 +40,8 @@ class RecordPattern;
 template<>
 class Visitor<Pattern> {
  public:
-  virtual void Visit(VariablePattern*) = 0;
-  virtual void Visit(RecordPattern*) = 0;
+  virtual void Visit(const VariablePattern*) = 0;
+  virtual void Visit(const RecordPattern*) = 0;
 };
 
 // TermType visitor.
@@ -57,11 +57,11 @@ class UserDefinedType;
 template<>
 class Visitor<TermType> {
  public:
-  virtual void Visit(BoolTermType*) = 0;
-  virtual void Visit(NatTermType*) = 0;
-  virtual void Visit(UnitTermType*) = 0;
-  virtual void Visit(ListTermType*) = 0;
-  virtual void Visit(RecordTermType*) = 0;
-  virtual void Visit(ArrowTermType*) = 0;
-  virtual void Visit(UserDefinedType*) = 0;
+  virtual void Visit(const BoolTermType*) = 0;
+  virtual void Visit(const NatTermType*) = 0;
+  virtual void Visit(const UnitTermType*) = 0;
+  virtual void Visit(const ListTermType*) = 0;
+  virtual void Visit(const RecordTermType*) = 0;
+  virtual void Visit(const ArrowTermType*) = 0;
+  virtual void Visit(const UserDefinedType*) = 0;
 };

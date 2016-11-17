@@ -10,13 +10,16 @@ class Context;
 
 class PrettyPrinter : public Visitor<TermType> {
  public:
-  void Visit(BoolTermType*) override;
-  void Visit(NatTermType*) override;
-  void Visit(UnitTermType*) override;
-  void Visit(ListTermType*) override;
-  void Visit(RecordTermType*) override;
-  void Visit(ArrowTermType*) override;
-  void Visit(UserDefinedType*) override;
+  void Visit(const BoolTermType*) override;
+  void Visit(const NatTermType*) override;
+  void Visit(const UnitTermType*) override;
+  void Visit(const ListTermType*) override;
+  void Visit(const RecordTermType*) override;
+  void Visit(const ArrowTermType*) override;
+  void Visit(const UserDefinedType*) override;
+
+  // TODO(foreverbell): Debug only.
+  std::string get(const TermType* type) { return pprints_[type]; }
 
  private:
   std::unordered_map<const TermType*, std::string> pprints_;

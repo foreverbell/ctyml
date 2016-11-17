@@ -16,7 +16,7 @@ class ast_exception : public std::exception {
   }
 
   ast_exception(ast_exception&& e, std::string cfg)
-    : cfgs_(std::move(e.cfgs_)), location_(e.location_) {
+    : cfgs_(std::move(e.cfgs_)), location_(e.location_), error_(e.error_) {
     cfgs_.push_back(std::move(cfg));
   }
 

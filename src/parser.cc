@@ -15,13 +15,6 @@ using TermPtr = unique_ptr<Term>;
 using TermTypePtr = unique_ptr<TermType>;
 using TypedBindersPtr = unique_ptr<TypedBinders>;
 
-namespace {
-namespace LL {
-
-// The grammar of our tiny PL is able to be parsed in LL(1) parser.
-// For each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed. Otherwise
-// just returns a null pointer.
-
 #define cfg_scope(cfg) \
   static const string CFG = cfg
 
@@ -78,6 +71,14 @@ namespace LL {
   } while (false); \
   to = lexer->pop()->number()
 
+
+namespace {
+namespace LL {
+
+// The grammar of our tiny PL is able to be parsed in LL(1) parser.
+// For each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed. Otherwise
+// just returns a null pointer.
+
 StmtPtr Statement(LexerIterator*, Context*);
 PatternPtr Pattern(LexerIterator*, Context*);
 TypedBindersPtr TypedBinders(LexerIterator*, Context*);
@@ -90,10 +91,10 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
 
   switch (token->type()) {
     case TokenType::TypeAlias: {
-      cfg_scope(R"(Statement = 'type' ucid '=' Type;)");
+      cfg_scope(R"(Statement = 'type' ucid '=' Type ';')");
       TermTypePtr type;
 
-      lexer->pop();
+      pop_or_throw(TokenType::TypeAlias);
       pop_ucid_or_throw(const string& ucid);
       pop_or_throw(TokenType::Eq);
       assign_or_throw(type, Type(lexer, ctx));
@@ -101,11 +102,11 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       return StmtPtr(new BindTypeStmt(Location(token->location(), lexer->last()->location()), ucid, type.release()));
     }
     case TokenType::Let: {
-      cfg_scope(R"(Statement = 'let' Pattern '=' Term;)");
+      cfg_scope(R"(Statement = 'let' Pattern '=' Term ';')");
       PatternPtr pattern;
       TermPtr term;
 
-      lexer->pop();
+      pop_or_throw(TokenType::Let);
       assign_or_throw(pattern, Pattern(lexer, ctx));
       pop_or_throw(TokenType::Eq);
       assign_or_throw(term, Term(lexer, ctx));
@@ -115,7 +116,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
         return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
                                         pattern.release(), term.release()));
       } else {
-        cfg_scope(R"(Statement = Term;)");
+        cfg_scope(R"(Statement = Term ';')");
         TermPtr stmt_term;
         assign_or_throw(stmt_term, [&]() -> TermPtr {
           cfg_scope(R"(Term = 'let' Pattern '=' Term 'in' Term)");
@@ -130,16 +131,19 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       }
     }
     case TokenType::Letrec: {
-      lexer->pop();
+      cfg_scope(R"(Statement = 'letrec' TypedBinder '=' Term 'in' Term ';')");
+      pop_or_throw(TokenType::Letrec);
       // TODO(foreverbell): implement recursion.
       return nullptr;
     }
     default: {
-      cfg_scope(R"(Statement = Term)");
+      cfg_scope(R"(Statement = Term ';')");
       TermPtr term;
 
-      assign_or_throw(term, Term(lexer, ctx));
-      Location location = term->location();
+      assign(term, Term(lexer, ctx));
+      if (term == nullptr) return nullptr;
+      pop_or_throw(TokenType::Semi);
+      Location location(term->location(), lexer->last()->location());
       return StmtPtr(new EvalStmt(location, term.release()));
     }
   }
@@ -354,7 +358,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       TypedBindersPtr binders;
       TermPtr term;
 
-      lexer->pop();
+      pop_or_throw(TokenType::Lambda);
       assign_or_throw(binders, TypedBinders(lexer, ctx));
       pop_or_throw(TokenType::Dot);
       assign_or_throw(term, Term(lexer, ctx));
@@ -368,7 +372,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       cfg_scope(R"(Term = 'if' Term 'then' Term 'else' Term)");
       TermPtr term1, term2, term3;
 
-      lexer->pop();
+      pop_or_throw(TokenType::If);
       assign_or_throw(term1, Term(lexer, ctx));
       pop_or_throw(TokenType::Then);
       assign_or_throw(term2, Term(lexer, ctx));
@@ -385,8 +389,27 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
 }  // namespace LL
 }  // namespace
 
-vector<StmtPtr> Parser::ParseAST() {
-  vector<StmtPtr> stmts;
+// Topmost = Statement
+//         | Statement Topmost
 
+vector<StmtPtr> Parser::ParseAST() {
+  cfg_scope(R"(Topmost = Statement | Statement Topmost)");
+
+  vector<StmtPtr> stmts;
+  LexerIterator lexer_iter(lexer_);
+  Context ctx;
+
+  do {
+    StmtPtr stmt;
+    try {
+      stmt = LL::Statement(&lexer_iter, &ctx);
+    } catch (ast_exception e) {
+      throw ast_exception(std::move(e), CFG);
+    }
+    if (stmt == nullptr) {
+      throw ast_exception(lexer_iter.location(), CFG); 
+    }
+    stmts.push_back(std::move(stmt));
+  } while (!lexer_iter.eof());
   return stmts;
 }

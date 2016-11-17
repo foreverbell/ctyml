@@ -1,24 +1,26 @@
 #include <cstdio>
 
 #include "ast.h"
-#include "location.h"
-#include "token.h"
 #include "lexer.h"
+#include "location.h"
 #include "parser.h"
+#include "pprinter.h"
+#include "token.h"
 
 using namespace std;
 
 int main() {
-  printf("%d\n", TokenType::If);
-
-  Token* token;
-  if ((token = Token::CreateInt(Location(1, 1), 123))) {
-    printf("%d\n", token->number());
-  } else;
-
-  Lexer* lexer = Lexer::Create("if false then 42 then 23;");
+  printf("Parsing type T = Nat->(Nat->Naat)->Bool;\n");
+  Lexer* lexer = Lexer::Create("type T = Nat->(Nat->Naat)->Bool;");
   Parser parser(lexer);
-  parser.lexer();
+  auto stmts = parser.ParseAST();
+  assert(stmts.size() == 1);
+  BindTypeStmt* stmt = dynamic_cast<BindTypeStmt*>(stmts[0].get());
+  assert(stmt != nullptr);
+
+  PrettyPrinter pprinter;
+  stmt->type()->Accept(&pprinter);
+  printf("%s\n", pprinter.get(stmt->type()).c_str());
 
   puts("Hello World!");
   return 0;

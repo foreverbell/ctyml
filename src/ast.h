@@ -104,6 +104,9 @@ class EvalStmt final : public Stmt {
  public:
   EvalStmt(Location location, Term* term)
     : Stmt(location), term_(term) { }
+
+  const Term* term() const { return term_.get(); }
+
  private:
   std::unique_ptr<Term> term_;
 };
@@ -112,6 +115,10 @@ class BindTermStmt final : public Stmt {
  public:
   BindTermStmt(Location location, Pattern* pattern, Term* term)
     : Stmt(location), pattern_(pattern), term_(term) { }
+
+  const Pattern* pattern() const { return pattern_.get(); }
+  const Term* term() const { return term_.get(); }
+
  private:
   std::unique_ptr<Pattern> pattern_;
   std::unique_ptr<Term> term_;
@@ -121,6 +128,10 @@ class BindTypeStmt final : public Stmt {
  public:
   BindTypeStmt(Location location, const std::string& type_alias, TermType* type)
     : Stmt(location), type_alias_(type_alias), type_(type) { }
+
+  const std::string& type_alias() const { return type_alias_; }
+  const TermType* type() const { return type_.get(); }
+
  private:
   std::string type_alias_;
   std::unique_ptr<TermType> type_;

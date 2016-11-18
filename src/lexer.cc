@@ -28,7 +28,7 @@ const unordered_map<string, TokenType> keyword_list = {
   {"lambda", TokenType::Lambda},
   {"let", TokenType::Let},
   {"in", TokenType::In},
-  {"letrec", TokenType::Letrec},
+  {"letrec", TokenType::LetRec},
   {"type", TokenType::TypeAlias},
   {"as", TokenType::As},
   {"Bool", TokenType::Bool},

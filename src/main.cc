@@ -11,8 +11,8 @@ using namespace std;
 
 int main() {
   printf("Parsing type T = Nat->(Nat->Naat)->Bool;\n");
-  Lexer* lexer = Lexer::Create("type T = Nat->(Nat->Naat)->Bool;");
-  Parser parser(lexer);
+  std::unique_ptr<Lexer> lexer(Lexer::Create("type T = Nat->(Nat->Naat)->Bool;"));
+  Parser parser(lexer.get());
   auto stmts = parser.ParseAST();
   assert(stmts.size() == 1);
   BindTypeStmt* stmt = dynamic_cast<BindTypeStmt*>(stmts[0].get());

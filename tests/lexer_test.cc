@@ -28,13 +28,13 @@ token_tuple create_id(const string& id) {
 
 class LexerTest : public ::testing::Test {
  protected:
-  void test(const string& input, const vector<token_tuple>& expected) {
-    lexer.reset(Lexer::Create(input));
-    ASSERT_TRUE(lexer != nullptr);
+  void Test(const string& input, const vector<token_tuple>& expected) {
+    lexer_.reset(Lexer::Create(input));
+    ASSERT_TRUE(lexer_ != nullptr);
 
-    ASSERT_EQ(expected.size(), lexer->size());
+    ASSERT_EQ(expected.size(), lexer_->size());
     for (size_t i = 0; i < expected.size(); ++i) {
-      const Token* token = lexer->get(i);
+      const Token* token = lexer_->get(i);
       EXPECT_EQ(std::get<0>(expected[i]), token->type());
       if (token->is_int()) {
         EXPECT_EQ(std::get<1>(expected[i]), token->number());
@@ -46,17 +46,17 @@ class LexerTest : public ::testing::Test {
   }
 
  private:
-  unique_ptr<Lexer> lexer;
+  unique_ptr<Lexer> lexer_;
 };
 
 TEST_F(LexerTest, KeywordsTest) {
-  test(R"(if true then false else true;)",
+  Test(R"(if true then false else true;)",
        {create(TokenType::If), create(TokenType::True), create(TokenType::Then), create(TokenType::False),
         create(TokenType::Else), create(TokenType::True), create(TokenType::Semi)});
 }
 
 TEST_F(LexerTest, SymbolsTest) {
-  test(R"(.,:;=_->(){}[])",
+  Test(R"(.,:;=_->(){}[])",
        {create(TokenType::Dot), create(TokenType::Comma), create(TokenType::Colon), create(TokenType::Semi),
         create(TokenType::Eq), create(TokenType::UScore), create(TokenType::Arrow), create(TokenType::LParen),
         create(TokenType::RParen), create(TokenType::LCurly), create(TokenType::RCurly), create(TokenType::LBracket),
@@ -64,18 +64,18 @@ TEST_F(LexerTest, SymbolsTest) {
 }
 
 TEST_F(LexerTest, VariablesTest) {
-  test(R"(if false then x else y;)",
+  Test(R"(if false then x else y;)",
        {create(TokenType::If), create(TokenType::False), create(TokenType::Then), create_id("x"),
         create(TokenType::Else), create_id("y"), create(TokenType::Semi)});
 }
 
 TEST_F(LexerTest, NumbersTest) {
-  test(R"(123;)",
+  Test(R"(123;)",
        {create_int(123), create(TokenType::Semi)});
 }
 
 TEST_F(LexerTest, MixtureTest) {
-  test(R"(
+  Test(R"(
     (lambda x. x) 42;
     type T = Nat->Nat;
        )",

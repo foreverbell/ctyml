@@ -71,16 +71,18 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
   } while (false); \
   to = lexer->pop()->number()
 
-
 namespace {
 namespace LL {
 
+// Dear bison & flex, you were right, salvation lays within.
+//
 // The grammar of our tiny PL is able to be parsed with an LL(1) parser.
 // For failure of each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed.
 // Otherwise just returns a null pointer.
 
 StmtPtr Statement(LexerIterator*, Context*);
 PatternPtr Pattern(LexerIterator*, Context*);
+TypedBindersPtr TypedBinder(LexerIterator*, Context*);
 TypedBindersPtr TypedBinders(LexerIterator*, Context*);
 TermTypePtr Type(LexerIterator*, Context*);
 TermPtr Term(LexerIterator*, Context*);
@@ -106,6 +108,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       pop_or_throw(TokenType::Eq);
       assign_or_throw(type, Type(lexer, ctx));
       pop_or_throw(TokenType::Semi);
+      ctx->AddName(ucid);
       return StmtPtr(new BindTypeStmt(Location(token->location(), lexer->last()->location()), ucid, type.release()));
     }
     case TokenType::Let: {
@@ -119,28 +122,73 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(term, Term(lexer, ctx));
 
       if (lexer->peak() == nullptr || lexer->peak()->type() == TokenType::Semi) {
-        pop_or_throw(TokenType::Semi);
+        pop_or_throw(TokenType::Semi);  // expect to fail if lexer->peak() == nullptr.
         return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
                                         pattern.release(), term.release()));
       } else {
         cfg_scope(R"(Statement = Term ';')");
         TermPtr stmt_term;
+
         assign_or_throw(stmt_term, [&]() -> TermPtr {
           cfg_scope(R"(Term = 'let' Pattern '=' Term 'in' Term)");
           TermPtr body;
+
           pop_or_throw(TokenType::In);
           assign_or_throw(body, Term(lexer, ctx));
+          ctx->DropBindings(1);  // throws away the binding introduced in Pattern.
           return TermPtr(new LetTerm(Location(token->location(), lexer->last()->location()),
                                      pattern.release(), term.release(), body.release()));
         }());
         pop_or_throw(TokenType::Semi);
-        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last()->location()), stmt_term.release())) ;
+        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last()->location()), stmt_term.release()));
       }
     }
-    case TokenType::Letrec: {
-      cfg_scope(R"(Statement = 'letrec' TypedBinder '=' Term 'in' Term ';')");
-      pop_or_throw(TokenType::Letrec);
-      // TODO(foreverbell): implement recursion.
+    case TokenType::LetRec: {
+      cfg_scope(R"(Statement = 'letrec' TypedBinder '=' Term ';')");
+      TypedBindersPtr binders;
+      TermPtr term;
+
+      pop_or_throw(TokenType::LetRec);
+      assign_or_throw(binders, TypedBinder(lexer, ctx));
+      assert(binders->size() == 1);
+      pop_or_throw(TokenType::Eq);
+      assign_or_throw(term, Term(lexer, ctx));
+
+      if (lexer->peak() == nullptr || lexer->peak()->type() == TokenType::Semi) {
+        pop_or_throw(TokenType::Semi);  // expect to fail if lexer->peak() == nullptr.
+
+        const std::string& variable = binders->get(0).first;
+        PatternPtr pattern(new class Pattern(binders->location(), variable));
+        Location location = Location(binders.get(), term.get());
+        TermPtr fix_term(
+            new UnaryTerm(location, UnaryTermToken::Fix,
+              new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
+        return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
+                                        pattern.release(), fix_term.release()));
+      } else {
+        cfg_scope(R"(Statement = Term ';')");
+        TermPtr stmt_term;
+
+        assign_or_throw(stmt_term, [&]() -> TermPtr {
+          cfg_scope(R"(Term = 'letrec' TypedBinder '=' Term 'in' Term)");
+          TermPtr body;
+
+          pop_or_throw(TokenType::In);
+          assign_or_throw(body, Term(lexer, ctx));
+          ctx->DropBindings(1);  // throws away the binding introduced in TypedBinder.
+
+          const std::string& variable = binders->get(0).first;
+          PatternPtr pattern(new class Pattern(binders->location(), variable));
+          Location location = Location(binders.get(), term.get());
+          TermPtr fix_term(
+              new UnaryTerm(location, UnaryTermToken::Fix,
+                new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
+          return TermPtr(new LetTerm(Location(token->location(), lexer->last()->location()),
+                                     pattern.release(), fix_term.release(), body.release()));
+        }());
+        pop_or_throw(TokenType::Semi);
+        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last()->location()), stmt_term.release()));
+      }
       return nullptr;
     }
     default: {
@@ -157,7 +205,28 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
   return nullptr;
 }
 
+// Pattern parsers.
+//
+// Pattern = lcid
+//         | '_'
+
 PatternPtr Pattern(LexerIterator* lexer, Context* ctx) {
+  const Token* token = lexer->peak();
+  if (token == nullptr) return nullptr;
+
+  if (token->type() == TokenType::LCaseId) {
+    cfg_scope(R"(Pattern = lcid)");
+
+    pop_lcid_or_throw(const string& lcid);
+    ctx->AddName(lcid);
+    return PatternPtr(new class Pattern(token->location(), lcid));
+  } else if (token->type() == TokenType::UScore) {
+    cfg_scope(R"(Pattern = '_')");
+    
+    pop_or_throw(TokenType::UScore);
+    ctx->AddName("_");
+    return PatternPtr(new class Pattern(token->location(), "_"));
+  }
   return nullptr;
 }
 

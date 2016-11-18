@@ -32,18 +32,6 @@ class VisitableImpl : public virtual Visitable<Base> {
   }
 };
 
-// Pattern visitor.
-class Pattern;
-class VariablePattern;
-class RecordPattern;
-
-template<>
-class Visitor<Pattern> {
- public:
-  virtual void Visit(const VariablePattern*) = 0;
-  virtual void Visit(const RecordPattern*) = 0;
-};
-
 // TermType visitor.
 class TermType;
 class BoolTermType;

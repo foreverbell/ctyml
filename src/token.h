@@ -15,7 +15,7 @@ enum class TokenType {
   IsNil, Head, Tail,
   Unit,
   Bool, Nat, List, UUnit,
-  Lambda, Let, In, Letrec, TypeAlias, As,
+  Lambda, Let, In, LetRec, TypeAlias, As,
   LParen, RParen,
   LCurly, RCurly,
   LBracket, RBracket,

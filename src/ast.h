@@ -18,12 +18,6 @@
 //
 // Pattern = lcid
 //         | '_'
-//         | '{' FieldPatterns '}'
-//
-// FieldPatterns = FieldPattern
-//               | FieldPattern ',' FieldPatterns
-//
-// FieldPattern = Pattern '=' lcid
 //
 // Term = AppTerm
 //      | 'lambda' TypedBinders '.' Term
@@ -140,24 +134,13 @@ class BindTypeStmt final : public Stmt {
 // Pattern.
 class Pattern : public Locatable {
  public:
-  Pattern(Location location) : Locatable(location) { }
-  virtual ~Pattern() = default;
+  Pattern(Location location, const std::string& variable)
+    : Locatable(location), variable_(variable) { }
 
-  virtual void Accept(Visitor<Pattern>* visitor) = 0;
-};
+  const std::string& variable() const { return variable_; }
 
-class VariablePattern : public Pattern {
- public:
-  VariablePattern(Location location) : Pattern(location) { }
-
-  void Accept(Visitor<Pattern>* visitor) override { }
-};
-
-class RecordPattern : public Pattern {
- public:
-  RecordPattern(Location location) : Pattern(location) { }
-
-  void Accept(Visitor<Pattern>* visitor) override { }
+ private:
+  std::string variable_;
 };
 
 // TypedBinders.

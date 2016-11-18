@@ -75,15 +75,22 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
 namespace {
 namespace LL {
 
-// The grammar of our tiny PL is able to be parsed in LL(1) parser.
-// For each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed. Otherwise
-// just returns a null pointer.
+// The grammar of our tiny PL is able to be parsed with an LL(1) parser.
+// For failure of each function, only throws exception if parser commits to this branch, i.e. some tokens are consumed.
+// Otherwise just returns a null pointer.
 
 StmtPtr Statement(LexerIterator*, Context*);
 PatternPtr Pattern(LexerIterator*, Context*);
 TypedBindersPtr TypedBinders(LexerIterator*, Context*);
 TermTypePtr Type(LexerIterator*, Context*);
 TermPtr Term(LexerIterator*, Context*);
+
+// Statement parsers.
+//
+// Statement = Term ';'
+//           | 'type' ucid '=' Type ';'
+//           | 'let' Pattern '=' Term ';'
+//           | 'letrec' TypedBinder '=' Term ';'
 
 StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
   const Token* token = lexer->peak();
@@ -154,6 +161,14 @@ PatternPtr Pattern(LexerIterator* lexer, Context* ctx) {
   return nullptr;
 }
 
+// TypedBinders parsers.
+// 
+// TypedBinders = TypedBinder
+//              | TypedBinder TypedBinders
+//
+// TypedBinder = lcid ':' Type
+// 	       | '_' ':' Type
+
 TypedBindersPtr TypedBinder(LexerIterator* lexer, Context* ctx) {
   const Token* token = lexer->peak();
   if (token == nullptr) return nullptr;
@@ -202,6 +217,8 @@ TypedBindersPtr TypedBinders(LexerIterator* lexer, Context* ctx) {
   return binders;
 }
 
+// Type parsers.
+//
 // Type = ArrowType
 //
 // ArrowType = AtomicType '->' ArrowType
@@ -342,11 +359,43 @@ TermTypePtr Type(LexerIterator* lexer, Context* ctx) {
   return type;
 }
 
+// Term parsers.
+//
 // Term = AppTerm
 //      | 'lambda' TypedBinders '.' Term
 //      | 'if' Term 'then' Term 'else' Term
 //      | 'let' Pattern '=' Term 'in' Term
 //      | 'letrec' TypedBinder '=' Term 'in' Term
+//
+// AppTerm = PathTerm
+//         | AppTerm PathTerm
+//         | 'succ' PathTerm
+//         | 'pred' PathTerm
+//         | 'iszero' PathTerm
+//         | 'cons' PathTerm PathTerm
+//         | 'isnil' PathTerm
+//         | 'head' PathTerm
+//         | 'tail' PathTerm
+//
+// PathTerm = PathTerm '.' lcid
+//          | AscribeTerm
+//
+// AscribeTerm = AtomicTerm
+//             | AtomicTerm 'as' Type
+//
+// AtomicTerm = '(' Term ')'
+//            | 'true'
+//            | 'false'
+//            | int
+//            | 'nil' '[' Type ']'
+//            | 'unit'
+//            | '{' Fields '}'
+//            | lcid
+//
+// Fields = Field
+//        | Field ',' Fields
+//
+// Field = lcid '=' Term
 
 TermPtr Term(LexerIterator* lexer, Context* ctx) {
   const Token* token = lexer->peak();

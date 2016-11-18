@@ -19,8 +19,7 @@ int main() {
   assert(stmt != nullptr);
 
   PrettyPrinter pprinter;
-  stmt->type()->Accept(&pprinter);
-  printf("%s\n", pprinter.get(stmt->type()).c_str());
+  printf("%s\n", pprinter.PrettyPrint(stmt->type()).c_str());
 
   puts("Hello World!");
   return 0;

@@ -10,12 +10,6 @@
 //           | 'let' Pattern '=' Term ';'
 //           | 'letrec' TypedBinder '=' Term ';'
 //
-// Term = AppTerm
-//      | 'lambda' TypedBinders '.' Term
-//      | 'if' Term 'then' Term 'else' Term
-//      | 'let' Pattern '=' Term 'in' Term
-//      | 'letrec' TypedBinder '=' Term 'in' Term
-//
 // TypedBinders = TypedBinder
 //              | TypedBinder TypedBinders
 //
@@ -30,6 +24,12 @@
 //               | FieldPattern ',' FieldPatterns
 //
 // FieldPattern = Pattern '=' lcid
+//
+// Term = AppTerm
+//      | 'lambda' TypedBinders '.' Term
+//      | 'if' Term 'then' Term 'else' Term
+//      | 'let' Pattern '=' Term 'in' Term
+//      | 'letrec' TypedBinder '=' Term 'in' Term/
 //
 // AppTerm = PathTerm
 //         | AppTerm PathTerm

@@ -18,8 +18,7 @@ class PrettyPrinter : public Visitor<TermType> {
   void Visit(const ArrowTermType*) override;
   void Visit(const UserDefinedType*) override;
 
-  // TODO(foreverbell): Debug only.
-  std::string get(const TermType* type) { return pprints_[type]; }
+  std::string PrettyPrint(const TermType* type);
 
  private:
   std::unordered_map<const TermType*, std::string> pprints_;

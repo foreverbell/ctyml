@@ -19,7 +19,6 @@ Locator::Locator(const string& input) : input_(input) {
 }
 
 void Locator::Locate(Location location, int* line1, int* column1, int* line2, int* column2) {
-  // Line number = the largest index that <= location.begin (end).
   int l1, l2;
 
 #define assign(dst, src) \

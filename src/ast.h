@@ -26,7 +26,6 @@
 //      | 'letrec' TypedBinder '=' Term 'in' Term/
 //
 // AppTerm = PathTerm
-//         | AppTerm PathTerm
 //         | 'succ' PathTerm
 //         | 'pred' PathTerm
 //         | 'iszero' PathTerm
@@ -34,6 +33,7 @@
 //         | 'isnil' PathTerm
 //         | 'head' PathTerm
 //         | 'tail' PathTerm
+//         | AppTerm PathTerm
 //
 // PathTerm = PathTerm '.' lcid
 //          | AscribeTerm
@@ -144,6 +144,7 @@ class Pattern : public Locatable {
 };
 
 // TypedBinders.
+// TODO(foreverbell): Rename it to TypedPatterns.
 class TypedBinders : public Locatable {
  public:
   TypedBinders(Location location) : Locatable(location) { }
@@ -263,7 +264,7 @@ class Term : public Locatable {
 };
 
 enum class NullaryTermToken {
-  True, False, UserDefined /* Variable */, Unit, Zero, Nil,
+  True, False, Unit, Zero,
 };
 
 enum class UnaryTermToken {
@@ -280,7 +281,7 @@ enum class TernaryTermToken {
 
 // As it is verbose to write down all n-ary terms that take n terms, a better approach is to do some abstraction,
 // so we can group all n-ary terms together, through it is a little difficult to understand.
-// A NAryTerm takes N terms, like (type, term_1, term_2 ... term_N).
+// A NAryTerm takes N terms, more specfically, (type, term_1, term_2 ... term_N).
 template<int N, typename TermToken>
 class NAryTerm : public Term {
  public:
@@ -336,17 +337,49 @@ class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
   const Term* term3() const { return terms_[2].get(); }
 };
 
+class NilTerm : public Term {
+ public:
+  NilTerm(Location location, TermType* list_type)
+    : Term(location), list_type_(list_type) { }
+
+  const TermType* list_type() const { return list_type_.get(); }
+
+ private:
+  std::unique_ptr<TermType> list_type_;
+};
+
+class VariableTerm : public Term {
+ public:
+  VariableTerm(Location location, int index)
+    : Term(location), index_(index) { }
+
+  int index() const { return index_; }
+
+ private:
+  int index_;
+};
+
 class RecordTerm : public Term {
  public:
   RecordTerm(Location location) : Term(location) { }
 
+  void merge(RecordTerm&& term) {
+    for (size_t i = 0; i < term.size(); ++i) {
+      add(term.fields_[i].first, term.fields_[i].second.release());
+    }
+  }
+
+  void add(const std::string& field, Term* term) {
+    fields_.push_back(std::make_pair(field, std::unique_ptr<Term>(term)));
+  }
+
   size_t size() const { return fields_.size(); }
-  std::pair<const std::string&, const Pattern*> get(int index) const {
+  std::pair<const std::string&, const Term*> get(int index) const {
     return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
   }
 
  private:
-  std::vector<std::pair<std::string, std::unique_ptr<Pattern>>> fields_;
+  std::vector<std::pair<std::string, std::unique_ptr<Term>>> fields_;
 };
 
 class ProjectTerm : public Term {

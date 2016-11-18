@@ -295,12 +295,6 @@ class NAryTerm : public Term {
   std::array<std::unique_ptr<Term>, N> terms_;
 };
 
-class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
- public:
-  NullaryTerm(Location location, NullaryTermToken type)
-    : NAryTerm(location, type) { }
-};
-
 class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
  public:
   UnaryTerm(Location location, UnaryTermToken type, Term* term1)
@@ -309,6 +303,23 @@ class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
   }
 
   const Term* term() const { return terms_[0].get(); }
+};
+
+class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
+ public:
+  NullaryTerm(Location location, NullaryTermToken type)
+    : NAryTerm(location, type) { }
+
+  static std::unique_ptr<Term> CreateInt(Location location, int n) {
+    if (n < 0) {
+      return nullptr;
+    }
+    std::unique_ptr<Term> term = std::make_unique<NullaryTerm>(location, NullaryTermToken::Zero);
+    for (int i = 0; i < n; ++i) {
+      term.reset(new UnaryTerm(location, UnaryTermToken::Succ, term.release()));
+    }
+    return term;
+  }
 };
 
 class BinaryTerm : public NAryTerm<2, BinaryTermToken> {

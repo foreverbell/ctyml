@@ -512,7 +512,7 @@ TermPtr AtomicTerm(LexerIterator* lexer, Context* ctx) {
       TermPtr term;
 
       pop_or_throw(TokenType::LParen);
-      assign(term, Term(lexer, ctx));
+      assign_or_throw(term, Term(lexer, ctx));
       pop_or_throw(TokenType::RParen);
       term->relocate(Location(token->location(), lexer->last_loc()));
       return term;
@@ -531,8 +531,11 @@ TermPtr AtomicTerm(LexerIterator* lexer, Context* ctx) {
     }
     case TokenType::Int: {
       cfg_scope(R"(AtomicTerm = int)");
+      TermPtr term;
 
-      // TODO(foreverbell): int.
+      pop_int_or_throw(int number);
+      assign_or_throw(term, NullaryTerm::CreateInt(token->location(), number));
+      return term;
     }
     case TokenType::Nil: {
       cfg_scope(R"(AtomicTerm = 'nil' '[' Type ']')");
@@ -540,7 +543,7 @@ TermPtr AtomicTerm(LexerIterator* lexer, Context* ctx) {
 
       pop_or_throw(TokenType::Nil);
       pop_or_throw(TokenType::LBracket);
-      assign(type, Type(lexer, ctx));
+      assign_or_throw(type, Type(lexer, ctx));
       pop_or_throw(TokenType::RBracket);
       return TermPtr(new NilTerm(Location(token->location(), lexer->last_loc()), type.release()));
     }
@@ -555,7 +558,7 @@ TermPtr AtomicTerm(LexerIterator* lexer, Context* ctx) {
       TermPtr term;
 
       pop_or_throw(TokenType::LCurly);
-      assign(term, Fields(lexer, ctx));
+      assign_or_throw(term, Fields(lexer, ctx));
       pop_or_throw(TokenType::RCurly);
       term->relocate(Location(token->location(), lexer->last_loc()));
       return term;

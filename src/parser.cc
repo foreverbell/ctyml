@@ -109,7 +109,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(type, Type(lexer, ctx));
       pop_or_throw(TokenType::Semi);
       ctx->AddName(ucid);
-      return StmtPtr(new BindTypeStmt(Location(token->location(), lexer->last()->location()), ucid, type.release()));
+      return StmtPtr(new BindTypeStmt(Location(token->location(), lexer->last_loc()), ucid, type.release()));
     }
     case TokenType::Let: {
       cfg_scope(R"(Statement = 'let' Pattern '=' Term ';')");
@@ -123,7 +123,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
 
       if (lexer->peak() == nullptr || lexer->peak()->type() == TokenType::Semi) {
         pop_or_throw(TokenType::Semi);  // expect to fail if lexer->peak() == nullptr.
-        return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
+        return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last_loc()),
                                         pattern.release(), term.release()));
       } else {
         cfg_scope(R"(Statement = Term ';')");
@@ -136,11 +136,11 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
           pop_or_throw(TokenType::In);
           assign_or_throw(body, Term(lexer, ctx));
           ctx->DropBindings(1);  // throws away the binding introduced in Pattern.
-          return TermPtr(new LetTerm(Location(token->location(), lexer->last()->location()),
+          return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
                                      pattern.release(), term.release(), body.release()));
         }());
         pop_or_throw(TokenType::Semi);
-        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last()->location()), stmt_term.release()));
+        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last_loc()), stmt_term.release()));
       }
     }
     case TokenType::LetRec: {
@@ -163,7 +163,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
         TermPtr fix_term(
             new UnaryTerm(location, UnaryTermToken::Fix,
               new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
-        return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last()->location()),
+        return StmtPtr(new BindTermStmt(Location(token->location(), lexer->last_loc()),
                                         pattern.release(), fix_term.release()));
       } else {
         cfg_scope(R"(Statement = Term ';')");
@@ -183,11 +183,11 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
           TermPtr fix_term(
               new UnaryTerm(location, UnaryTermToken::Fix,
                 new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
-          return TermPtr(new LetTerm(Location(token->location(), lexer->last()->location()),
+          return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
                                      pattern.release(), fix_term.release(), body.release()));
         }());
         pop_or_throw(TokenType::Semi);
-        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last()->location()), stmt_term.release()));
+        return StmtPtr(new EvalStmt(Location(token->location(), lexer->last_loc()), stmt_term.release()));
       }
       return nullptr;
     }
@@ -198,7 +198,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       assign(term, Term(lexer, ctx));
       if (term == nullptr) return nullptr;
       pop_or_throw(TokenType::Semi);
-      Location location(term->location(), lexer->last()->location());
+      Location location(term->location(), lexer->last_loc());
       return StmtPtr(new EvalStmt(location, term.release()));
     }
   }
@@ -222,7 +222,7 @@ PatternPtr Pattern(LexerIterator* lexer, Context* ctx) {
     return PatternPtr(new class Pattern(token->location(), lcid));
   } else if (token->type() == TokenType::UScore) {
     cfg_scope(R"(Pattern = '_')");
-    
+
     pop_or_throw(TokenType::UScore);
     ctx->AddName("_");
     return PatternPtr(new class Pattern(token->location(), "_"));
@@ -231,7 +231,7 @@ PatternPtr Pattern(LexerIterator* lexer, Context* ctx) {
 }
 
 // TypedBinders parsers.
-// 
+//
 // TypedBinders = TypedBinder
 //              | TypedBinder TypedBinders
 //
@@ -350,7 +350,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       pop_or_throw(TokenType::LParen);
       assign_or_throw(type, Type(lexer, ctx));
       pop_or_throw(TokenType::RParen);
-      type->relocate(Location(token->location(), lexer->last()->location()));
+      type->relocate(Location(token->location(), lexer->last_loc()));
       return type;
     }
     case TokenType::Bool: {
@@ -376,7 +376,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       pop_or_throw(TokenType::LBracket);
       assign_or_throw(type, Type(lexer, ctx));
       pop_or_throw(TokenType::RBracket);
-      return TermTypePtr(new ListTermType(Location(token->location(), lexer->last()->location()), type.release()));
+      return TermTypePtr(new ListTermType(Location(token->location(), lexer->last_loc()), type.release()));
     }
     case TokenType::LCurly: {
       cfg_scope(R"(AtomicType = {' FieldTypes '}')");
@@ -385,15 +385,15 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       pop_or_throw(TokenType::LCurly);
       assign_or_throw(type, FieldTypes(lexer, ctx));
       pop_or_throw(TokenType::RCurly);
-      type->relocate(Location(token->location(), lexer->last()->location()));
+      type->relocate(Location(token->location(), lexer->last_loc()));
       return type;
     }
     case TokenType::UCaseId: {
       cfg_scope(R"(AtomicType = ucid)");
       pop_ucid_or_throw(const string& ucid);
       int index = ctx->ToIndex(ucid);
-      if (index == -1) throw ast_exception(lexer->last()->location(), CFG, "type <" + ucid + "> is not found");
-      return TermTypePtr(new UserDefinedType(lexer->last()->location(), index));
+      if (index == -1) throw ast_exception(lexer->last_loc(), CFG, "type <" + ucid + "> is not found");
+      return TermTypePtr(new UserDefinedType(lexer->last_loc(), index));
     }
     default: {
       return nullptr;
@@ -496,7 +496,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(term2, Term(lexer, ctx));
       pop_or_throw(TokenType::Else);
       assign_or_throw(term3, Term(lexer, ctx));
-      return TermPtr(new TernaryTerm(Location(token->location(), lexer->last()->location()), TernaryTermToken::If,
+      return TermPtr(new TernaryTerm(Location(token->location(), lexer->last_loc()), TernaryTermToken::If,
                                      term1.release(), term2.release(), term3.release()));
     }
 

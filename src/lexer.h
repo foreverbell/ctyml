@@ -36,7 +36,7 @@ class LexerIterator {
   LexerIterator(const Lexer* lexer) : lexer_(lexer), offset_(0) { }
 
   void reset() { offset_ = 0; }
-  const Token* last() const { return offset_ == 0 ? nullptr : lexer_->get(offset_ - 1); }
+  Location last_loc() const { assert(offset_ > 0); return lexer_->get(offset_ - 1)->location(); }
   const Token* peak() const { return eof() ? nullptr : lexer_->get(offset_); }
   const Token* pop() {
     const Token* cur = peak();

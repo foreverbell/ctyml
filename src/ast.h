@@ -257,10 +257,14 @@ class UserDefinedType : public TermType, public VisitableImpl<TermType, UserDefi
 };
 
 // Term.
-class Term : public Locatable {
+class Term : public Locatable, public virtual Visitable<Term> {
  public:
   Term(Location location) : Locatable(location) { }
   virtual ~Term() = default;
+
+  // ast_level() denotes the level of this Term node in AST.
+  // Currently there are five levels, Term(1), AppTerm(2), PathTerm(3), AscribeTerm(4), AtomicTerm(5).
+  virtual int ast_level() const = 0;
 };
 
 enum class NullaryTermToken {
@@ -295,17 +299,19 @@ class NAryTerm : public Term {
   std::array<std::unique_ptr<Term>, N> terms_;
 };
 
-class UnaryTerm : public NAryTerm<1, UnaryTermToken> {
+class UnaryTerm : public NAryTerm<1, UnaryTermToken>, public VisitableImpl<Term, UnaryTerm> {
  public:
   UnaryTerm(Location location, UnaryTermToken type, Term* term1)
     : NAryTerm(location, type) {
     terms_[0].reset(term1);
   }
 
+  int ast_level() const override { return 2; }
+
   const Term* term() const { return terms_[0].get(); }
 };
 
-class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
+class NullaryTerm : public NAryTerm<0, NullaryTermToken>, public VisitableImpl<Term, NullaryTerm> {
  public:
   NullaryTerm(Location location, NullaryTermToken type)
     : NAryTerm(location, type) { }
@@ -320,9 +326,11 @@ class NullaryTerm : public NAryTerm<0, NullaryTermToken> {
     }
     return term;
   }
+
+  int ast_level() const override { return 5; }
 };
 
-class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
+class BinaryTerm : public NAryTerm<2, BinaryTermToken>, public VisitableImpl<Term, BinaryTerm> {
  public:
   BinaryTerm(Location location, BinaryTermToken type, Term* term1, Term* term2)
     : NAryTerm(location, type) {
@@ -330,11 +338,13 @@ class BinaryTerm : public NAryTerm<2, BinaryTermToken> {
     terms_[1].reset(term2);
   }
 
+  int ast_level() const override { return 2; }
+
   const Term* term1() const { return terms_[0].get(); }
   const Term* term2() const { return terms_[1].get(); }
 };
 
-class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
+class TernaryTerm : public NAryTerm<3, TernaryTermToken>, public VisitableImpl<Term, TernaryTerm> {
  public:
   TernaryTerm(Location location, TernaryTermToken type, Term* term1, Term* term2, Term* term3)
     : NAryTerm(location, type) {
@@ -343,15 +353,19 @@ class TernaryTerm : public NAryTerm<3, TernaryTermToken> {
     terms_[2].reset(term3);
   }
 
+  int ast_level() const override { return 1; }
+
   const Term* term1() const { return terms_[0].get(); }
   const Term* term2() const { return terms_[1].get(); }
   const Term* term3() const { return terms_[2].get(); }
 };
 
-class NilTerm : public Term {
+class NilTerm : public Term, public VisitableImpl<Term, NilTerm> {
  public:
   NilTerm(Location location, TermType* list_type)
     : Term(location), list_type_(list_type) { }
+
+  int ast_level() const override { return 5; }
 
   const TermType* list_type() const { return list_type_.get(); }
 
@@ -359,10 +373,12 @@ class NilTerm : public Term {
   std::unique_ptr<TermType> list_type_;
 };
 
-class VariableTerm : public Term {
+class VariableTerm : public Term, public VisitableImpl<Term, VariableTerm> {
  public:
   VariableTerm(Location location, int index)
     : Term(location), index_(index) { }
+
+  int ast_level() const override { return 5; }
 
   int index() const { return index_; }
 
@@ -370,9 +386,11 @@ class VariableTerm : public Term {
   int index_;
 };
 
-class RecordTerm : public Term {
+class RecordTerm : public Term, public VisitableImpl<Term, RecordTerm> {
  public:
   RecordTerm(Location location) : Term(location) { }
+
+  int ast_level() const override { return 5; }
 
   void merge(RecordTerm&& term) {
     for (size_t i = 0; i < term.size(); ++i) {
@@ -393,10 +411,12 @@ class RecordTerm : public Term {
   std::vector<std::pair<std::string, std::unique_ptr<Term>>> fields_;
 };
 
-class ProjectTerm : public Term {
+class ProjectTerm : public Term, public VisitableImpl<Term, ProjectTerm> {
  public:
   ProjectTerm(Location location, Term* term, const std::string& field)
     : Term(location), term_(term), field_(field) { }
+
+  int ast_level() const override { return 3; }
 
   const Term* term() const { return term_.get(); }
   const std::string& field() const { return field_; }
@@ -406,10 +426,12 @@ class ProjectTerm : public Term {
   const std::string field_;
 };
 
-class LetTerm : public Term {
+class LetTerm : public Term, public VisitableImpl<Term, LetTerm> {
  public:
   LetTerm(Location location, Pattern* pattern, Term* bind_term, Term* body_term)
     : Term(location), pattern_(pattern), term1_(bind_term), term2_(body_term) { }
+
+  int ast_level() const override { return 1; }
 
   const Pattern* pattern() const { return pattern_.get(); }
   const Term* bind_term() const { return term1_.get(); }
@@ -420,10 +442,12 @@ class LetTerm : public Term {
   const std::unique_ptr<Term> term1_, term2_;
 };
 
-class AbsTerm : public Term {
+class AbsTerm : public Term, public VisitableImpl<Term, AbsTerm> {
  public:
   AbsTerm(Location location, const std::string& variable, TermType* type, Term* term)
     : Term(location), variable_(variable), variable_type_(type), term_(term) { }
+
+  int ast_level() const override { return 1; }
 
   const std::string& variable() const { return variable_; }
   const TermType* variable_type() const { return variable_type_.get(); }
@@ -435,10 +459,12 @@ class AbsTerm : public Term {
   const std::unique_ptr<Term> term_;
 };
 
-class AscribeTerm : public Term {
+class AscribeTerm : public Term, public VisitableImpl<Term, AscribeTerm> {
  public:
   AscribeTerm(Location location, Term* term, TermType* type)
     : Term(location), term_(term), ascribe_type_(type) { }
+
+  int ast_level() const override { return 4; }
 
   const Term* term() const { return term_.get(); }
   const TermType* ascribe_type() const { return ascribe_type_.get(); }

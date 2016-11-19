@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "ast.h"
+#include "context.h"
 #include "lexer.h"
 #include "location.h"
 #include "parser.h"
@@ -18,7 +19,8 @@ int main() {
   BindTypeStmt* stmt = dynamic_cast<BindTypeStmt*>(stmts[0].get());
   assert(stmt != nullptr);
 
-  PrettyPrinter pprinter;
+  Context ctx;
+  PrettyPrinter pprinter(&ctx);
   printf("%s\n", pprinter.PrettyPrint(stmt->type()).c_str());
 
   puts("Hello World!");

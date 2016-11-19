@@ -32,6 +32,36 @@ class VisitableImpl : public virtual Visitable<Base> {
   }
 };
 
+// Term visitior.
+class Term;
+class NullaryTerm;
+class UnaryTerm;
+class BinaryTerm;
+class TernaryTerm;
+class NilTerm;
+class VariableTerm;
+class RecordTerm;
+class ProjectTerm;
+class LetTerm;
+class AbsTerm;
+class AscribeTerm;
+
+template<>
+class Visitor<Term> {
+ public:
+  virtual void Visit(const NullaryTerm*) = 0;
+  virtual void Visit(const UnaryTerm*) = 0;
+  virtual void Visit(const BinaryTerm*) = 0;
+  virtual void Visit(const TernaryTerm*) = 0;
+  virtual void Visit(const NilTerm*) = 0;
+  virtual void Visit(const VariableTerm*) = 0;
+  virtual void Visit(const RecordTerm*) = 0;
+  virtual void Visit(const ProjectTerm*) = 0;
+  virtual void Visit(const LetTerm*) = 0;
+  virtual void Visit(const AbsTerm*) = 0;
+  virtual void Visit(const AscribeTerm*) = 0;
+};
+
 // TermType visitor.
 class TermType;
 class BoolTermType;

@@ -619,17 +619,6 @@ TermPtr PathTerm(LexerIterator* lexer, Context* ctx) {
 TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
   const Token* token = lexer->peak();
   if (token == nullptr) return nullptr;
-
-// AppTerm = PathTerm
-//         | 'succ' PathTerm
-//         | 'pred' PathTerm
-//         | 'iszero' PathTerm
-//         | 'cons' PathTerm PathTerm
-//         | 'isnil' PathTerm
-//         | 'head' PathTerm
-//         | 'tail' PathTerm
-//         | AppTerm PathTerm
-
   TermPtr term;
 
   switch (token->type()) {

@@ -578,18 +578,109 @@ TermPtr AtomicTerm(LexerIterator* lexer, Context* ctx) {
 }
 
 TermPtr AscribeTerm(LexerIterator* lexer, Context* ctx) {
+  cfg_scope(R"(AscribeTerm = AtomicTerm)");
+  TermPtr term;
+  TermTypePtr type;
 
+  assign(term, AtomicTerm(lexer, ctx));
+  if (term == nullptr) return nullptr;
+  if (lexer->peak() != nullptr && lexer->peak()->type() == TokenType::As) {
+    cfg_scope(R"(AscribeTerm = AtomicTerm 'as' Type)");
+
+    pop_or_throw(TokenType::As);
+    assign_or_throw(type, Type(lexer, ctx));
+    Location location(term.get(), type.get());
+    return TermPtr(new class AscribeTerm(location, term.release(), type.release()));
+  }
+  return term;
 }
 
+// PathTerm introduces left recursion. The expansion of AppTerm can be viewed as
+//   AscribeTerm [. lcid]*
 TermPtr PathTerm(LexerIterator* lexer, Context* ctx) {
+  cfg_scope(R"(PathTerm = AscribeTerm)");
+  TermPtr term;
 
+  assign(term, AscribeTerm(lexer, ctx));
+  if (term == nullptr) return nullptr;
+  while (lexer->peak() != nullptr && lexer->peak()->type() == TokenType::Dot) {
+    cfg_scope(R"(PathTerm = PathTerm '.' lcid)");
+
+    pop_or_throw(TokenType::Dot);
+    pop_lcid_or_throw(const string& lcid);
+    Location location(term->location(), lexer->last_loc());
+    term.reset(new ProjectTerm(location, term.release(), lcid));
+  }
+  return term;
 }
 
-// AppTerm introduces left recursion.
-// The expansion of AppTerm can be viewed as
+// AppTerm introduces left recursion. The expansion of AppTerm can be viewed as
 //   {PathTerm, 'succ' PathTerm ...} [PathTerm]*
 TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
-  return nullptr;
+  const Token* token = lexer->peak();
+  if (token == nullptr) return nullptr;
+
+// AppTerm = PathTerm
+//         | 'succ' PathTerm
+//         | 'pred' PathTerm
+//         | 'iszero' PathTerm
+//         | 'cons' PathTerm PathTerm
+//         | 'isnil' PathTerm
+//         | 'head' PathTerm
+//         | 'tail' PathTerm
+//         | AppTerm PathTerm
+
+  TermPtr term;
+
+  switch (token->type()) {
+#define unary_term(token_type, token_id) \
+    case (TokenType::token_type): { \
+      cfg_scope(R"(AppTerm = '##token_id' PathTerm)"); \
+      TermPtr path_term; \
+       \
+      pop_or_throw(TokenType::token_type); \
+      assign_or_throw(path_term, PathTerm(lexer, ctx)); \
+      Location location(token, path_term.get()); \
+      term = TermPtr(new UnaryTerm(location, UnaryTermToken::token_type, path_term.release())); \
+    }
+
+    unary_term(Succ, succ);
+    unary_term(Pred, pred);
+    unary_term(IsZero, iszero);
+    unary_term(IsNil, isnil);
+    unary_term(Head, head);
+    unary_term(Tail, tail);
+
+#undef unary_term
+
+    case (TokenType::Cons): {
+      cfg_scope(R"(AppTerm = 'cons' PathTerm PathTerm)"); 
+      TermPtr term1, term2;
+
+      pop_or_throw(TokenType::Cons);
+      assign_or_throw(term1, PathTerm(lexer, ctx));
+      assign_or_throw(term2, PathTerm(lexer, ctx));
+      Location location(token, term2.get());
+      term = TermPtr(new BinaryTerm(location, BinaryTermToken::Cons, term1.release(), term2.release()));
+    }
+    default: {
+      cfg_scope(R"(AppTerm = PathTerm)");
+      
+      assign(term, PathTerm(lexer, ctx));
+      if (term == nullptr) return nullptr;
+    }
+  }
+
+  while (lexer->peak() != nullptr) {
+    cfg_scope(R"(AppTerm = AppTerm PathTerm)");
+    TermPtr path_term;
+
+    assign(path_term, PathTerm(lexer, ctx));
+    if (path_term == nullptr) break;
+    Location location(term.get(), path_term.get());
+    term = TermPtr(new BinaryTerm(location, BinaryTermToken::App, term.release(), path_term.release()));
+  }
+  return term;
 }
 
 TermPtr Term(LexerIterator* lexer, Context* ctx) {

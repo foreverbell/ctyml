@@ -395,7 +395,8 @@ class RecordTerm : public Term {
 
 class ProjectTerm : public Term {
  public:
-  ProjectTerm(Location location) : Term(location) { }
+  ProjectTerm(Location location, Term* term, const std::string& field)
+    : Term(location), term_(term), field_(field) { }
 
   const Term* term() const { return term_.get(); }
   const std::string& field() const { return field_; }
@@ -436,7 +437,8 @@ class AbsTerm : public Term {
 
 class AscribeTerm : public Term {
  public:
-  AscribeTerm(Location location) : Term(location) { }
+  AscribeTerm(Location location, Term* term, TermType* type)
+    : Term(location), term_(term), ascribe_type_(type) { }
 
   const Term* term() const { return term_.get(); }
   const TermType* ascribe_type() const { return ascribe_type_.get(); }

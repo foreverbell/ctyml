@@ -10,7 +10,7 @@ using std::string;
 
 string PrettyPrinter::PrettyPrint(const Term* term) {
   term->Accept(this);
-  string ret = std::move(term_pprints_[term]);
+  string ret = get(term);
   term_pprints_.clear();
   not_nat_.clear();
   return ret;
@@ -18,38 +18,135 @@ string PrettyPrinter::PrettyPrint(const Term* term) {
 
 string PrettyPrinter::PrettyPrint(const TermType* type) {
   type->Accept(this);
-  string ret = std::move(type_pprints_[type]);
+  string ret = get(type);
   type_pprints_.clear();
   return ret;
 }
 
+// Term Visitor.
+
 void PrettyPrinter::Visit(const NullaryTerm* term) {
   switch (term->type()) {
-    case NullaryTermToken::True:
+    case NullaryTermToken::True: {
       term_pprints_[term] = "true";
-      break;
-    case NullaryTermToken::False:
+    } break;
+    case NullaryTermToken::False: {
       term_pprints_[term] = "false";
-      break;
-    case NullaryTermToken::Unit:
+    } break;
+    case NullaryTermToken::Unit: {
       term_pprints_[term] = "unit";
-      break;
-    case NullaryTermToken::Zero:
+    } break;
+    case NullaryTermToken::Zero: {
       term_pprints_[term] = "0";
-      break;
+    } break;
   }
 }
 
 void PrettyPrinter::Visit(const UnaryTerm* term) {
-
+  term->term()->Accept(this);
+  switch (term->type()) {
+    case (UnaryTermToken::Succ): {
+      // TODO(foreverbell): Pretty printer for Nats.
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "succ (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "succ " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::Pred): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "pred (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "pred " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::IsZero): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "iszero (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "iszero " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::Head): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "head (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "head " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::Tail): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "tail (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "tail " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::IsNil): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "isnil (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "isnil " + get(term->term());
+      }
+    } break;
+    case (UnaryTermToken::Fix): {
+      if (term->term()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] = "fix (" + get(term->term()) + ")";
+      } else {
+        term_pprints_[term] = "fix " + get(term->term());
+      }
+    } break;
+  }
 }
 
 void PrettyPrinter::Visit(const BinaryTerm* term) {
-
+  term->term1()->Accept(this);
+  term->term2()->Accept(this);
+  switch (term->type()) {
+    case BinaryTermToken::Cons: {
+      term_pprints_[term] = "cons ";
+      if (term->term1()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] += "(" + get(term->term1()) + ")";
+      } else {
+        term_pprints_[term] += get(term->term1());
+      }
+      term_pprints_[term] += " ";
+      if (term->term2()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] += "(" + get(term->term2()) + ")";
+      } else {
+        term_pprints_[term] += get(term->term2());
+      }
+    } break;
+    case BinaryTermToken::App: {
+      // Use '<' here instead of '<=', for the grammar is 'AppTerm = AppTerm PathTerm'.
+      if (term->term1()->ast_level() < term->ast_level()) {
+        term_pprints_[term] += "(" + get(term->term1()) + ")";
+      } else {
+        term_pprints_[term] += get(term->term1());
+      }
+      term_pprints_[term] += " ";
+      if (term->term2()->ast_level() <= term->ast_level()) {
+        term_pprints_[term] += "(" + get(term->term2()) + ")";
+      } else {
+        term_pprints_[term] += get(term->term2());
+      }
+    } break;
+  }
 }
 
 void PrettyPrinter::Visit(const TernaryTerm* term) {
-
+  term->term1()->Accept(this);
+  term->term2()->Accept(this);
+  term->term3()->Accept(this);
+  switch (term->type()) {
+    case (TernaryTermToken::If): {
+      term_pprints_[term] = "if ";
+      term_pprints_[term] += get(term->term1());
+      term_pprints_[term] += " then ";
+      term_pprints_[term] += get(term->term2());
+      term_pprints_[term] += " else ";
+      term_pprints_[term] += get(term->term3());
+    } break;
+  }
 }
 
 void PrettyPrinter::Visit(const NilTerm* term) {
@@ -68,27 +165,48 @@ void PrettyPrinter::Visit(const RecordTerm* term) {
     }
     const Term* subterm = term->get(i).second;
     subterm->Accept(this);
-    term_pprints_[term] += term->get(i).first + ":" + term_pprints_[subterm];
+    term_pprints_[term] += term->get(i).first + ":" + get(subterm);
   }
   term_pprints_[term] += "}";
-
 }
 
 void PrettyPrinter::Visit(const ProjectTerm* term) {
-
+  term->term()->Accept(this);
+  if (term->term()->ast_level() < term->ast_level()) {
+    term_pprints_[term] = "(" + get(term->term()) + ")." + term->field();
+  } else {
+    term_pprints_[term] = get(term->term()) + "." + term->field();
+  }
 }
 
 void PrettyPrinter::Visit(const LetTerm* term) {
+  term->bind_term()->Accept(this);
 
+  string fresh = ctx_->PickFreshName(term->pattern()->variable());
+  term->body_term()->Accept(this);
+  ctx_->DropBindings(1);
+
+  term_pprints_[term] = "let " + fresh + " = " + get(term->bind_term()) + " in " + get(term->body_term());
 }
 
 void PrettyPrinter::Visit(const AbsTerm* term) {
+  string fresh = ctx_->PickFreshName(term->variable());
+  term->term()->Accept(this);
+  ctx_->DropBindings(1);
 
+  term_pprints_[term] = "lambda " + get(term->term()) + ":" + PrettyPrint(term->variable_type()) + ". " + get(term->term());
 }
 
 void PrettyPrinter::Visit(const AscribeTerm* term) {
-
+  term->term()->Accept(this);
+  if (term->term()->ast_level() <= term->ast_level()) {
+    term_pprints_[term] = "(" + get(term->term()) + ") as " + PrettyPrint(term->ascribe_type());
+  } else {
+    term_pprints_[term] = get(term->term()) + " as " + PrettyPrint(term->ascribe_type());
+  }
 }
+
+// TermType Visitor.
 
 void PrettyPrinter::Visit(const BoolTermType* type) {
   type_pprints_[type] = "Bool";
@@ -104,7 +222,7 @@ void PrettyPrinter::Visit(const UnitTermType* type) {
 
 void PrettyPrinter::Visit(const ListTermType* type) {
   type->type()->Accept(this);
-  type_pprints_[type] = "List[" + type_pprints_[type->type()] + "]";
+  type_pprints_[type] = "List[" + get(type->type()) + "]";
 }
 
 void PrettyPrinter::Visit(const RecordTermType* type) {
@@ -115,7 +233,7 @@ void PrettyPrinter::Visit(const RecordTermType* type) {
     }
     const TermType* subtype = type->get(i).second;
     subtype->Accept(this);
-    type_pprints_[type] += type->get(i).first + ":" + type_pprints_[subtype];
+    type_pprints_[type] += type->get(i).first + ":" + get(subtype);
   }
   type_pprints_[type] += "}";
 }
@@ -130,9 +248,9 @@ void PrettyPrinter::Visit(const ArrowTermType* type) {
   //   ArrowType = AtomicType '->' ArrowType;
   //   AtomicType = '(' Type ')'.
   if (type->type1()->ast_level() <= type->ast_level()) {
-    type_pprints_[type] = "(" + type_pprints_[type->type1()] + ")->" + type_pprints_[type->type2()];
+    type_pprints_[type] = "(" + get(type->type1()) + ")->" + get(type->type2());
   } else {
-    type_pprints_[type] = type_pprints_[type->type1()] + "->" + type_pprints_[type->type2()];
+    type_pprints_[type] = get(type->type1()) + "->" + get(type->type2());
   }
 }
 

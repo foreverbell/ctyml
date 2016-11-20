@@ -23,7 +23,7 @@
 //      | 'lambda' TypedBinders '.' Term
 //      | 'if' Term 'then' Term 'else' Term
 //      | 'let' Pattern '=' Term 'in' Term
-//      | 'letrec' TypedBinder '=' Term 'in' Term/
+//      | 'letrec' TypedBinder '=' Term 'in' Term
 //
 // AppTerm = PathTerm
 //         | 'succ' PathTerm

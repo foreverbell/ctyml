@@ -643,7 +643,7 @@ TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
 #undef unary_term
 
     case (TokenType::Cons): {
-      cfg_scope(R"(AppTerm = 'cons' PathTerm PathTerm)"); 
+      cfg_scope(R"(AppTerm = 'cons' PathTerm PathTerm)");
       TermPtr term1, term2;
 
       pop_or_throw(TokenType::Cons);
@@ -654,7 +654,7 @@ TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
     }
     default: {
       cfg_scope(R"(AppTerm = PathTerm)");
-      
+
       assign(term, PathTerm(lexer, ctx));
       if (term == nullptr) return nullptr;
     }

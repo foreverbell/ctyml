@@ -39,6 +39,14 @@ class PrettyPrinter : public Visitor<Term>, public Visitor<TermType> {
   std::string PrettyPrint(const TermType* type);
 
  private:
+  std::string get(const TermType* type) {
+    return std::move(type_pprints_[type]);
+  }
+
+  std::string get(const Term* term) {
+    return std::move(term_pprints_[term]);
+  }
+
   std::unordered_map<const TermType*, std::string> type_pprints_;
   std::unordered_map<const Term*, std::string> term_pprints_;
   Context* const ctx_;

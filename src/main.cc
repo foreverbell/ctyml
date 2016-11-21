@@ -16,7 +16,7 @@ letrec plus:Nat->Nat->Nat =
   lambda a:Nat b:Nat.
     if iszero a
       then b
-      else pus (pred a) (succ b);
+      else plus (pred a) (succ b);
 
 letrec sum:List[Nat]->Nat =
   lambda l:List[Nat].

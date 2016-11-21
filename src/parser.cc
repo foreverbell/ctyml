@@ -35,14 +35,18 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
       throw ast_exception(std::move(e), CFG); \
     } \
     if ((v) == nullptr) { \
-      throw ast_exception(lexer->location(), CFG); \
+      string err(#expr); \
+      err = err.substr(0, err.find("(")); \
+      throw ast_exception(lexer->location(), CFG, "expect a " + err); \
     } \
   } while (false)
 
 #define pop_or_throw(token) \
   do { \
     if (!lexer->peak() || lexer->peak()->type() != token) { \
-      throw ast_exception(lexer->location(), CFG); \
+      string err(#token); \
+      err = err.substr(err.find_last_of("::") + 1); \
+      throw ast_exception(lexer->location(), CFG, "expect a " + err); \
     } \
     lexer->pop(); \
   } while (false)
@@ -50,7 +54,7 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
 #define pop_ucid_or_throw(to) \
   do { \
     if (!lexer->peak() || lexer->peak()->type() != TokenType::UCaseId) { \
-      throw ast_exception(lexer->location(), CFG); \
+      throw ast_exception(lexer->location(), CFG, "expect an ucid"); \
     } \
   } while (false); \
   to = lexer->pop()->identifier()
@@ -58,7 +62,7 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
 #define pop_lcid_or_throw(to) \
   do { \
     if (!lexer->peak() || lexer->peak()->type() != TokenType::LCaseId) { \
-      throw ast_exception(lexer->location(), CFG); \
+      throw ast_exception(lexer->location(), CFG, "expect a lcid"); \
     } \
   } while (false); \
   to = lexer->pop()->identifier()
@@ -66,7 +70,7 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
 #define pop_int_or_throw(to) \
   do { \
     if (!lexer->peak() || lexer->peak()->type() != TokenType::Int) { \
-      throw ast_exception(lexer->location(), CFG); \
+      throw ast_exception(lexer->location(), CFG, "expect a natural number"); \
     } \
   } while (false); \
   to = lexer->pop()->number()

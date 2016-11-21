@@ -34,8 +34,7 @@ class ParserTest : public ::testing::Test {
     parser_ = std::make_unique<Parser>(lexer_.get());
 
     vector<unique_ptr<Stmt>> stmts;
-    // ASSERT_NO_THROW(stmts = parser_->ParseAST());
-    stmts = parser_->ParseAST();
+    ASSERT_NO_THROW(stmts = parser_->ParseAST());
 
     stringstream ss(output);
     vector<string> pprints;

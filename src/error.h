@@ -29,8 +29,9 @@ class ast_exception : public std::exception {
         msg_.append(error_);
         msg_.append("\n");
       }
+      msg_ += "grammar stack:\n";
       for (const std::string& cfg : cfgs_) {
-        msg_.append(cfg);
+        msg_.append("  " + cfg);
         msg_.append("\n");
       }
     }

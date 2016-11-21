@@ -1,4 +1,4 @@
-#include <cstdio>
+#include <iostream>
 
 #include "ast.h"
 #include "context.h"
@@ -10,19 +10,53 @@
 
 using namespace std;
 
-int main() {
-  printf("Parsing type T = Nat->(Nat->Naat)->Bool;\n");
-  std::unique_ptr<Lexer> lexer(Lexer::Create("type T = Nat->(Nat->Naat)->Bool;"));
-  Parser parser(lexer.get());
-  auto stmts = parser.ParseAST();
-  assert(stmts.size() == 1);
-  BindTypeStmt* stmt = dynamic_cast<BindTypeStmt*>(stmts[0].get());
-  assert(stmt != nullptr);
+int main(int argc, char** argv) {
+  string input = R"(
+letrec plus:Nat->Nat->Nat =
+  lambda a:Nat b:Nat.
+    if iszero a
+      then b
+      else pus (pred a) (succ b);
 
+letrec sum:List[Nat]->Nat =
+  lambda l:List[Nat].
+    if isnil l
+      then 0
+      else plus (head l) (sum (tail l));
+
+let l = cons 1 (cons 2 nil[Nat]);
+
+sum l;
+)";
+
+  std::unique_ptr<Lexer> lexer(Lexer::Create(input));
+  Parser parser(lexer.get());
+  vector<unique_ptr<Stmt>> stmts;
   Context ctx;
   PrettyPrinter pprinter(&ctx);
-  printf("%s\n", pprinter.PrettyPrint(stmt->type()).c_str());
 
-  puts("Hello World!");
+  try {
+    stmts = parser.ParseAST();
+  } catch (const ast_exception& e) {
+    lexer->locator()->Error(2, e.location(), e.what());
+    return 0;
+  }
+
+  for (int i = 0; i < stmts.size(); ++i) {
+    EvalStmt* eval_stmt = dynamic_cast<EvalStmt*>(stmts[i].get());
+    BindTermStmt* term_stmt = dynamic_cast<BindTermStmt*>(stmts[i].get());
+    BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
+
+    if (eval_stmt != nullptr) {
+      cout << pprinter.PrettyPrint(eval_stmt->term()) << endl;
+    } else if (term_stmt != nullptr) {
+      cout << pprinter.PrettyPrint(term_stmt->term()) << endl;
+      ctx.AddName(term_stmt->variable());
+    } else if (type_stmt != nullptr) {
+      cout << pprinter.PrettyPrint(type_stmt->type()) << endl;
+      ctx.AddName(type_stmt->type_alias());
+    }
+  }
+
   return 0;
 }

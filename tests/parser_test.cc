@@ -34,7 +34,8 @@ class ParserTest : public ::testing::Test {
     parser_ = std::make_unique<Parser>(lexer_.get());
 
     vector<unique_ptr<Stmt>> stmts;
-    ASSERT_NO_THROW(stmts = parser_->ParseAST());
+    // ASSERT_NO_THROW(stmts = parser_->ParseAST());
+    stmts = parser_->ParseAST();
 
     stringstream ss(output);
     vector<string> pprints;
@@ -98,5 +99,33 @@ let y = false;
 10
 false
 (if y then {x:true,y:unit} else {x:false,y:unit}).x
+)");
+}
+
+TEST_F(ParserTest, LetRecTest) {
+  Init(R"(
+letrec equal:Nat->Nat->Bool =
+  lambda a:Nat b:Nat.
+    if iszero a
+      then iszero b
+      else if iszero b
+             then false
+             else equal (pred a) (pred b);
+)");
+  Test(R"(
+fix (lambda equal:Nat->Nat->Bool. lambda a:Nat. lambda b:Nat. if iszero a then iszero b else if iszero b then false else equal (pred a) (pred b))
+)");
+}
+
+TEST_F(ParserTest, AppTermTest) {
+  Init(R"(
+(succ {x: 1, y: 2}).x;
+succ ({x: 1, y: 2}.x);
+head (cons (lambda x:Nat->Nat. x) nil[Nat->Nat]) (lambda x:Nat->Nat. x) (lambda x:Nat->Nat. x);
+)");
+  Test(R"(
+(succ {x:1,y:2}).x
+succ {x:1,y:2}.x
+head (cons (lambda x:Nat->Nat. x) nil[Nat->Nat]) (lambda x:Nat->Nat. x) (lambda x:Nat->Nat. x)
 )");
 }

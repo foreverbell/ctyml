@@ -624,14 +624,14 @@ TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
   switch (token->type()) {
 #define unary_term(token_type, token_id) \
     case (TokenType::token_type): { \
-      cfg_scope(R"(AppTerm = '##token_id' PathTerm)"); \
+      cfg_scope(R"(AppTerm = ')" #token_id R"(' PathTerm)"); \
       TermPtr path_term; \
        \
       pop_or_throw(TokenType::token_type); \
       assign_or_throw(path_term, PathTerm(lexer, ctx)); \
       Location location(token, path_term.get()); \
       term = TermPtr(new UnaryTerm(location, UnaryTermToken::token_type, path_term.release())); \
-    }
+    } break
 
     unary_term(Succ, succ);
     unary_term(Pred, pred);
@@ -651,7 +651,7 @@ TermPtr AppTerm(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(term2, PathTerm(lexer, ctx));
       Location location(token, term2.get());
       term = TermPtr(new BinaryTerm(location, BinaryTermToken::Cons, term1.release(), term2.release()));
-    }
+    } break;
     default: {
       cfg_scope(R"(AppTerm = PathTerm)");
 

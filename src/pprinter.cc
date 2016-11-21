@@ -199,7 +199,7 @@ void PrettyPrinter::Visit(const AbsTerm* term) {
   term->term()->Accept(this);
   ctx_->DropBindings(1);
 
-  term_pprints_[term] = "lambda " + get(term->term()) + ":" + PrettyPrint(term->variable_type()) + ". " + get(term->term());
+  term_pprints_[term] = "lambda " + term->variable() + ":" + PrettyPrint(term->variable_type()) + ". " + get(term->term());
 }
 
 void PrettyPrinter::Visit(const AscribeTerm* term) {
@@ -218,7 +218,7 @@ bool PrettyPrinter::IsPrintableNatTerm(const Term* term, int* nat) {
   const UnaryTerm* unary_term = dynamic_cast<const UnaryTerm*>(term);
   if (unary_term == nullptr || unary_term->type() != UnaryTermToken::Succ) {
     const NullaryTerm* nullary_term = dynamic_cast<const NullaryTerm*>(term);
-    if (nullary_term->type() == NullaryTermToken::Zero) {
+    if (nullary_term != nullptr && nullary_term->type() == NullaryTermToken::Zero) {
       *nat = 0;
       return true;
     }

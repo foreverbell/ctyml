@@ -87,50 +87,6 @@ class Pattern;
 class Term;
 class TermType;
 
-// Statement.
-class Stmt : public Locatable {
- public:
-  Stmt(Location location) : Locatable(location) { }
-  virtual ~Stmt() = default;
-};
-
-class EvalStmt final : public Stmt {
- public:
-  EvalStmt(Location location, Term* term)
-    : Stmt(location), term_(term) { }
-
-  const Term* term() const { return term_.get(); }
-
- private:
-  std::unique_ptr<Term> term_;
-};
-
-class BindTermStmt final : public Stmt {
- public:
-  BindTermStmt(Location location, Pattern* pattern, Term* term)
-    : Stmt(location), pattern_(pattern), term_(term) { }
-
-  const Pattern* pattern() const { return pattern_.get(); }
-  const Term* term() const { return term_.get(); }
-
- private:
-  std::unique_ptr<Pattern> pattern_;
-  std::unique_ptr<Term> term_;
-};
-
-class BindTypeStmt final : public Stmt {
- public:
-  BindTypeStmt(Location location, const std::string& type_alias, TermType* type)
-    : Stmt(location), type_alias_(type_alias), type_(type) { }
-
-  const std::string& type_alias() const { return type_alias_; }
-  const TermType* type() const { return type_.get(); }
-
- private:
-  std::string type_alias_;
-  std::unique_ptr<TermType> type_;
-};
-
 // Pattern.
 class Pattern : public Locatable {
  public:
@@ -224,7 +180,7 @@ class RecordTermType : public TermType, public VisitableImpl<TermType, RecordTer
   }
 
   size_t size() const { return fields_.size(); }
-  std::pair<const std::string&, TermType*> get(int index) const {
+  std::pair<std::string, TermType*> get(int index) const {
     return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
   }
 
@@ -403,7 +359,7 @@ class RecordTerm : public Term, public VisitableImpl<Term, RecordTerm> {
   }
 
   size_t size() const { return fields_.size(); }
-  std::pair<const std::string&, const Term*> get(int index) const {
+  std::pair<std::string, Term*> get(int index) const {
     return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
   }
 
@@ -472,4 +428,48 @@ class AscribeTerm : public Term, public VisitableImpl<Term, AscribeTerm> {
  private:
   const std::unique_ptr<Term> term_;
   const std::unique_ptr<TermType> ascribe_type_;
+};
+
+// Statement.
+class Stmt : public Locatable {
+ public:
+  Stmt(Location location) : Locatable(location) { }
+  virtual ~Stmt() = default;
+};
+
+class EvalStmt final : public Stmt {
+ public:
+  EvalStmt(Location location, Term* term)
+    : Stmt(location), term_(term) { }
+
+  const Term* term() const { return term_.get(); }
+
+ private:
+  std::unique_ptr<Term> term_;
+};
+
+class BindTermStmt final : public Stmt {
+ public:
+  BindTermStmt(Location location, Pattern* pattern, Term* term)
+    : Stmt(location), pattern_(pattern), term_(term) { }
+
+  const std::string& variable() const { return pattern_->variable(); }
+  const Term* term() const { return term_.get(); }
+
+ private:
+  std::unique_ptr<Pattern> pattern_;
+  std::unique_ptr<Term> term_;
+};
+
+class BindTypeStmt final : public Stmt {
+ public:
+  BindTypeStmt(Location location, const std::string& type_alias, TermType* type)
+    : Stmt(location), type_alias_(type_alias), type_(type) { }
+
+  const std::string& type_alias() const { return type_alias_; }
+  const TermType* type() const { return type_.get(); }
+
+ private:
+  std::string type_alias_;
+  std::unique_ptr<TermType> type_;
 };

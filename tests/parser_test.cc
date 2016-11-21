@@ -90,12 +90,12 @@ T2->T1->T2->List[Nat]
 
 TEST_F(ParserTest, TermTest) {
   Init(R"(
-let x = 2;
+let x = 10;
 let y = false;
 (if y then {x: true, y: unit} else {x: false, y: unit}).x;
 )");
   Test(R"(
-succ (succ 0)
+10
 false
 (if y then {x:true,y:unit} else {x:false,y:unit}).x
 )");

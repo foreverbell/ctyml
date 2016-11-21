@@ -46,7 +46,11 @@ void PrettyPrinter::Visit(const UnaryTerm* term) {
   term->term()->Accept(this);
   switch (term->type()) {
     case (UnaryTermToken::Succ): {
-      // TODO(foreverbell): Pretty printer for Nats.
+      int nat = 0;
+      if (IsPrintableNatTerm(term, &nat)) {
+        term_pprints_[term] = std::to_string(nat);
+        break;
+      }
       if (term->term()->ast_level() <= term->ast_level()) {
         term_pprints_[term] = "succ (" + get(term->term()) + ")";
       } else {
@@ -103,6 +107,7 @@ void PrettyPrinter::Visit(const BinaryTerm* term) {
   term->term2()->Accept(this);
   switch (term->type()) {
     case BinaryTermToken::Cons: {
+      // TODO(foreverbell): pretty printer for list.
       term_pprints_[term] = "cons ";
       if (term->term1()->ast_level() <= term->ast_level()) {
         term_pprints_[term] += "(" + get(term->term1()) + ")";
@@ -203,6 +208,28 @@ void PrettyPrinter::Visit(const AscribeTerm* term) {
     term_pprints_[term] = "(" + get(term->term()) + ") as " + PrettyPrint(term->ascribe_type());
   } else {
     term_pprints_[term] = get(term->term()) + " as " + PrettyPrint(term->ascribe_type());
+  }
+}
+
+bool PrettyPrinter::IsPrintableNatTerm(const Term* term, int* nat) {
+  if (not_nat_.find(term) != not_nat_.end()) {
+    return false;
+  }
+  const UnaryTerm* unary_term = dynamic_cast<const UnaryTerm*>(term);
+  if (unary_term == nullptr || unary_term->type() != UnaryTermToken::Succ) {
+    const NullaryTerm* nullary_term = dynamic_cast<const NullaryTerm*>(term);
+    if (nullary_term->type() == NullaryTermToken::Zero) {
+      *nat = 0;
+      return true;
+    }
+    return false;
+  }
+  if (IsPrintableNatTerm(unary_term->term(), nat)) {
+    *nat += 1;
+    return true;
+  } else {
+    not_nat_.insert(unary_term->term());
+    return false;
   }
 }
 

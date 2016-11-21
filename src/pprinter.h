@@ -47,10 +47,13 @@ class PrettyPrinter : public Visitor<Term>, public Visitor<TermType> {
     return std::move(term_pprints_[term]);
   }
 
+  bool IsPrintableNatTerm(const Term* term, int* nat);
+
   std::unordered_map<const TermType*, std::string> type_pprints_;
   std::unordered_map<const Term*, std::string> term_pprints_;
   Context* const ctx_;
 
-  // If a term is contained in this unordered_set, it is not a printable Nat, i.e. succ (succ (succ ... 0))).
+  // If a 'succ' term is contained in this unordered_set, it is not a printable Nat,
+  // A printable Nat is a list of 'succ's, i.e. succ (succ (succ ... 0))).
   std::unordered_set<const Term*> not_nat_;
 };

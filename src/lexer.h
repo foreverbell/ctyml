@@ -13,6 +13,7 @@ class Lexer {
   Lexer(const Lexer&) = delete;
   Lexer& operator=(const Lexer&) = delete;
 
+  // TODO(foreverbell): After lexcial_exception is implemented, move out creation logic from factory method.
   static Lexer* Create(const std::string& input);
 
   const std::string& input() const { return input_; }

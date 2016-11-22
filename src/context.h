@@ -7,21 +7,19 @@
 #include <utility>
 #include <vector>
 
+class Term;
+class TermType;
+
 class Binding {
  public:
-  virtual ~Binding() = default;
-};
+  Binding(const Term* term, const TermType* type) : term_(term), type_(type) { }
 
-class VariableBinding : public Binding {
+  const Term* term() const { return term_; }
+  const TermType* type() const { return type_; }
 
-};
-
-class TermAliasBinding : public Binding {
-
-};
-
-class TypeAliasBinding : public Binding {
-
+ private:
+  const Term* const term_;  // nullable.
+  const TermType* const type_;  // nullable.
 };
 
 class Context final {

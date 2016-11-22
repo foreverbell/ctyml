@@ -65,8 +65,12 @@ unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type) {
     return nullptr;
   }
   TermTypeShifter shifter(ud_type->index() + 1, ctx);
+
   assert(ctx->get(ud_type->index()).second->type() != nullptr);
-  return SimplifyType(ctx, shifter.Shift(ctx->get(ud_type->index()).second->type()).get());
+  auto shifted = shifter.Shift(ctx->get(ud_type->index()).second->type());
+  auto deeper_shifted = SimplifyType(ctx, shifted.get());
+
+  return std::move(deeper_shifted == nullptr ? shifted : deeper_shifted);
 }
 
 }  // namespace

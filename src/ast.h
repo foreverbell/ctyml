@@ -219,7 +219,7 @@ class Term : public Locatable, public virtual Visitable<Term> {
   virtual ~Term() = default;
 
   // ast_level() denotes the level of this Term node in AST.
-  // Currently there are five levels, Term(1), AppTerm(2), PathTerm(3), AscribeTerm(4), AtomicTerm(5).
+  // Currently there are five levels, Term(1), AppTerm(2), PathTerm(3), AscribeTerm(4) and AtomicTerm(5).
   virtual int ast_level() const = 0;
 };
 

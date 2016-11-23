@@ -87,6 +87,9 @@ class Pattern;
 class Term;
 class TermType;
 
+class Context;
+class TermTypeComparator;
+
 // Pattern.
 class Pattern : public Locatable {
  public:
@@ -133,30 +136,45 @@ class TermType : public Locatable, public virtual Visitable<TermType> {
   // ast_level() denotes the level of this TermType node in AST.
   // Currently there are two levels, ArrowType(1) and AtomicType(2).
   virtual int ast_level() const = 0;
+
+  virtual TermTypeComparator* CreateComparator(const Context* ctx) const = 0;
+  virtual bool Compare(const Context* ctx, const TermType* rhs) const = 0;
 };
 
 class BoolTermType : public TermType, public VisitableImpl<TermType, BoolTermType> {
  public:
   BoolTermType(Location location) : TermType(location) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 };
 
 class NatTermType : public TermType, public VisitableImpl<TermType, NatTermType> {
  public:
   NatTermType(Location location) : TermType(location) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 };
 
 class UnitTermType : public TermType, public VisitableImpl<TermType, UnitTermType> {
  public:
   UnitTermType(Location location) : TermType(location) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 };
 
 class ListTermType : public TermType, public VisitableImpl<TermType, ListTermType> {
  public:
   ListTermType(Location location, TermType* type) : TermType(location), type_(type) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 
   TermType* type() const { return type_.get(); }
 
@@ -167,7 +185,10 @@ class ListTermType : public TermType, public VisitableImpl<TermType, ListTermTyp
 class RecordTermType : public TermType, public VisitableImpl<TermType, RecordTermType> {
  public:
   RecordTermType(Location location) : TermType(location) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 
   void merge(RecordTermType&& type) {
     for (size_t i = 0; i < type.size(); ++i) {
@@ -192,7 +213,10 @@ class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermT
  public:
   ArrowTermType(Location location, TermType* type1, TermType* type2)
     : TermType(location), type1_(type1), type2_(type2) { }
+
   int ast_level() const override { return 1; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 
   TermType* type1() const { return type1_.get(); }
   TermType* type2() const { return type2_.get(); }
@@ -204,7 +228,10 @@ class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermT
 class UserDefinedTermType : public TermType, public VisitableImpl<TermType, UserDefinedTermType> {
  public:
   UserDefinedTermType(Location location, int index) : TermType(location), index_(index) { }
+
   int ast_level() const override { return 2; }
+  TermTypeComparator* CreateComparator(const Context* ctx) const override;
+  bool Compare(const Context* ctx, const TermType* rhs) const override;
 
   int index() const { return index_; }
 

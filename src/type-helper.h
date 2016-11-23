@@ -16,10 +16,14 @@ class RecordTermType;
 class ArrowTermType;
 class UserDefinedTermType;
 
+// Recusively simplify a type in the given context <ctx>, until the outer-most type is not user-defined.
+// Returns nullptr if no simplification can be done.
+std::unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type);
+
 // TermType shifter.
 class TermTypeShifter : public Visitor<TermType> {
  public:
-  TermTypeShifter(int delta, const Context* ctx) : delta_(delta), ctx_(ctx) { }
+  TermTypeShifter(int delta) : delta_(delta) { }
 
   std::unique_ptr<TermType> Shift(const TermType*);
 
@@ -33,7 +37,6 @@ class TermTypeShifter : public Visitor<TermType> {
 
  private:
   const int delta_;
-  const Context* const ctx_;
   std::unordered_map<const TermType*, std::unique_ptr<TermType>> shifted_types_;
 };
 
@@ -49,8 +52,6 @@ class TermTypeComparator {
   virtual bool Compare(const ListTermType*) const { return false; }
   virtual bool Compare(const RecordTermType*) const { return false; }
   virtual bool Compare(const ArrowTermType*) const { return false; }
-
-  static TermTypeComparator* CreateUserDefinedTypeComparator(const Context* ctx, const UserDefinedTermType* type);
 };
 
 class BoolTermTypeComparator : public TermTypeComparator {

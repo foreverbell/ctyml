@@ -2,13 +2,32 @@
 
 #include <cassert>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ast.h"
 #include "context.h"
 
+using std::string;
 using std::unique_ptr;
+using std::unordered_map;
 using std::vector;
+
+unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type) {
+  const UserDefinedTermType* ud_type = dynamic_cast<const UserDefinedTermType*>(type);
+
+  if (ud_type == nullptr) {
+    return nullptr;
+  }
+  TermTypeShifter shifter(ud_type->index() + 1);
+
+  assert(ctx->get(ud_type->index()).second->type() != nullptr);
+  auto shifted = shifter.Shift(ctx->get(ud_type->index()).second->type());
+  auto deeper_shifted = SimplifyType(ctx, shifted.get());
+
+  return std::move(deeper_shifted == nullptr ? shifted : deeper_shifted);
+}
 
 unique_ptr<TermType> TermTypeShifter::Shift(const TermType* type) {
   type->Accept(this);
@@ -54,39 +73,27 @@ void TermTypeShifter::Visit(const UserDefinedTermType* type) {
   shifted_types_[type] = std::make_unique<UserDefinedTermType>(type->location(), type->index() + delta_);
 }
 
-namespace {
-
-// Recusively simplify a type in the given context <ctx>, until the outer-most type is not user-defined.
-// Returns nullptr if no simplification can be done.
-unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type) {
-  const UserDefinedTermType* ud_type = dynamic_cast<const UserDefinedTermType*>(type);
-
-  if (ud_type == nullptr) {
-    return nullptr;
-  }
-  TermTypeShifter shifter(ud_type->index() + 1, ctx);
-
-  assert(ctx->get(ud_type->index()).second->type() != nullptr);
-  auto shifted = shifter.Shift(ctx->get(ud_type->index()).second->type());
-  auto deeper_shifted = SimplifyType(ctx, shifted.get());
-
-  return std::move(deeper_shifted == nullptr ? shifted : deeper_shifted);
-}
-
-}  // namespace
-
-// TODO(foreverbell): Implementation.
 bool ListTermTypeComparator::Compare(const ListTermType* rhs) const {
-  return false;
+  return lhs_->type()->Compare(ctx_, rhs->type());
 }
 
 bool RecordTermTypeComparator::Compare(const RecordTermType* rhs) const {
   if (lhs_->size() != rhs->size()) {
     return false;
   }
-  return false;
+  unordered_map<string, const TermType*> field_map;
+  for (int i = 0; i < lhs_->size(); ++i) {
+    field_map[lhs_->get(i).first] = lhs_->get(i).second;
+  }
+  for (int i = 0; i < rhs->size(); ++i) {
+    auto iter = field_map.find(rhs->get(i).first);
+    if (iter == field_map.end() || !iter->second->Compare(ctx_, rhs->get(i).second)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool ArrowTermTypeComparator::Compare(const ArrowTermType* rhs) const {
-  return false;
+  return lhs_->type1()->Compare(ctx_, rhs->type1()) && lhs_->type2()->Compare(ctx_, rhs->type2());
 }

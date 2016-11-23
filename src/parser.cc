@@ -1,12 +1,14 @@
 #include "parser.h"
 
 #include <string>
+#include <unordered_set>
 
 #include "context.h"
 #include "lexer.h"
 
 using std::string;
 using std::unique_ptr;
+using std::unordered_set;
 using std::vector;
 
 using PatternPtr = unique_ptr<Pattern>;
@@ -76,6 +78,18 @@ using TypedBindersPtr = unique_ptr<TypedBinders>;
   to = lexer->pop()->number()
 
 namespace {
+
+template <typename T>
+void CheckDuplicateFields(const T& field_container, const LexerIterator* lexer, const string& CFG) {
+  unordered_set<string> field_set;
+  for (size_t i = 0; i < field_container->size(); ++i) {
+    if (field_set.count(field_container->get(i).first)) {
+      throw ast_exception(lexer->location(), CFG, "found duplicate field <" + field_container->get(i).first + ">");
+    }
+    field_set.insert(field_container->get(i).first);
+  }
+}
+
 namespace LL {
 
 // Dear bison & flex, you were right, salvation lays within.
@@ -338,6 +352,7 @@ TermTypePtr FieldTypes(LexerIterator* lexer, Context* ctx) {
     fields->relocate(Location(fields.get(), cur.get()));
     fields->merge(std::move(*cur.release()));
   }
+  CheckDuplicateFields(fields, lexer, CFG);
   return TermTypePtr(fields.release());
 }
 
@@ -503,6 +518,7 @@ TermPtr Fields(LexerIterator* lexer, Context* ctx) {
     fields->relocate(Location(fields.get(), cur.get()));
     fields->merge(std::move(*cur.release()));
   }
+  CheckDuplicateFields(fields, lexer, CFG);
   return TermPtr(fields.release());
 }
 

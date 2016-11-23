@@ -33,7 +33,7 @@ class PrettyPrinter : public Visitor<Term>, public Visitor<TermType> {
   void Visit(const ListTermType*) override;
   void Visit(const RecordTermType*) override;
   void Visit(const ArrowTermType*) override;
-  void Visit(const UserDefinedType*) override;
+  void Visit(const UserDefinedTermType*) override;
 
   std::string PrettyPrint(const Term* term);
   std::string PrettyPrint(const TermType* type);

@@ -14,7 +14,7 @@ class UnitTermType;
 class ListTermType;
 class RecordTermType;
 class ArrowTermType;
-class UserDefinedType;
+class UserDefinedTermType;
 
 // TermType shifter.
 class TermTypeShifter : public Visitor<TermType> {
@@ -29,7 +29,7 @@ class TermTypeShifter : public Visitor<TermType> {
   void Visit(const ListTermType*) override;
   void Visit(const RecordTermType*) override;
   void Visit(const ArrowTermType*) override;
-  void Visit(const UserDefinedType*) override;
+  void Visit(const UserDefinedTermType*) override;
 
  private:
   const int delta_;
@@ -49,6 +49,8 @@ class TermTypeComparator {
   virtual bool Compare(const ListTermType*) const { return false; }
   virtual bool Compare(const RecordTermType*) const { return false; }
   virtual bool Compare(const ArrowTermType*) const { return false; }
+
+  static TermTypeComparator* CreateUserDefinedTypeComparator(const Context* ctx, const UserDefinedTermType* type);
 };
 
 class BoolTermTypeComparator : public TermTypeComparator {

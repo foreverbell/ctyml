@@ -281,6 +281,6 @@ void PrettyPrinter::Visit(const ArrowTermType* type) {
   }
 }
 
-void PrettyPrinter::Visit(const UserDefinedType* type) {
+void PrettyPrinter::Visit(const UserDefinedTermType* type) {
   type_pprints_[type] = ctx_->get(type->index()).first;
 }

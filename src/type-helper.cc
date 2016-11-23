@@ -50,8 +50,8 @@ void TermTypeShifter::Visit(const ArrowTermType* type) {
       type->location(), shifted_types_[type->type1()].release(), shifted_types_[type->type2()].release());
 }
 
-void TermTypeShifter::Visit(const UserDefinedType* type) {
-  shifted_types_[type] = std::make_unique<UserDefinedType>(type->location(), type->index() + delta_);
+void TermTypeShifter::Visit(const UserDefinedTermType* type) {
+  shifted_types_[type] = std::make_unique<UserDefinedTermType>(type->location(), type->index() + delta_);
 }
 
 namespace {
@@ -59,7 +59,7 @@ namespace {
 // Recusively simplify a type in the given context <ctx>, until the outer-most type is not user-defined.
 // Returns nullptr if no simplification can be done.
 unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type) {
-  const UserDefinedType* ud_type = dynamic_cast<const UserDefinedType*>(type);
+  const UserDefinedTermType* ud_type = dynamic_cast<const UserDefinedTermType*>(type);
 
   if (ud_type == nullptr) {
     return nullptr;

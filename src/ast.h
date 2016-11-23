@@ -201,9 +201,9 @@ class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermT
   std::unique_ptr<TermType> type1_, type2_;
 };
 
-class UserDefinedType : public TermType, public VisitableImpl<TermType, UserDefinedType> {
+class UserDefinedTermType : public TermType, public VisitableImpl<TermType, UserDefinedTermType> {
  public:
-  UserDefinedType(Location location, int index) : TermType(location), index_(index) { }
+  UserDefinedTermType(Location location, int index) : TermType(location), index_(index) { }
   int ast_level() const override { return 2; }
 
   int index() const { return index_; }

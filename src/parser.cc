@@ -400,7 +400,7 @@ TermTypePtr AtomicType(LexerIterator* lexer, Context* ctx) {
       pop_ucid_or_throw(const string& ucid);
       int index = ctx->ToIndex(ucid);
       if (index == -1) throw ast_exception(lexer->last_loc(), CFG, "type <" + ucid + "> is not in scope");
-      return TermTypePtr(new UserDefinedType(lexer->last_loc(), index));
+      return TermTypePtr(new UserDefinedTermType(lexer->last_loc(), index));
     }
     default: {
       return nullptr;

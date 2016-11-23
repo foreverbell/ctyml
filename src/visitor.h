@@ -70,7 +70,7 @@ class UnitTermType;
 class ListTermType;
 class RecordTermType;
 class ArrowTermType;
-class UserDefinedType;
+class UserDefinedTermType;
 
 template<>
 class Visitor<TermType> {
@@ -81,5 +81,5 @@ class Visitor<TermType> {
   virtual void Visit(const ListTermType*) = 0;
   virtual void Visit(const RecordTermType*) = 0;
   virtual void Visit(const ArrowTermType*) = 0;
-  virtual void Visit(const UserDefinedType*) = 0;
+  virtual void Visit(const UserDefinedTermType*) = 0;
 };

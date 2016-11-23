@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "error/ast-exception.h"
 #include "context.h"
 #include "lexer.h"
 
@@ -795,7 +796,7 @@ vector<StmtPtr> Parser::ParseAST() {
       throw ast_exception(std::move(e), CFG);
     }
     if (stmt == nullptr) {
-      throw ast_exception(lexer_iter.location(), CFG);
+      throw ast_exception(lexer_iter.location(), CFG, "bad statement");
     }
     stmts.push_back(std::move(stmt));
   } while (!lexer_iter.eof());

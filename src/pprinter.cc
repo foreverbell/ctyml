@@ -249,7 +249,7 @@ void PrettyPrinter::Visit(const UnitTermType* type) {
 
 void PrettyPrinter::Visit(const ListTermType* type) {
   type->type()->Accept(this);
-  type_pprints_[type] = "List[" + get(type->type()) + "]";
+  type_pprints_[type] = "List[" + get(type->type().get()) + "]";
 }
 
 void PrettyPrinter::Visit(const RecordTermType* type) {
@@ -258,7 +258,7 @@ void PrettyPrinter::Visit(const RecordTermType* type) {
     if (i != 0) {
       type_pprints_[type] += ",";
     }
-    const TermType* subtype = type->get(i).second;
+    const TermType* subtype = type->get(i).second.get();
     subtype->Accept(this);
     type_pprints_[type] += type->get(i).first + ":" + get(subtype);
   }
@@ -275,9 +275,9 @@ void PrettyPrinter::Visit(const ArrowTermType* type) {
   //   ArrowType = AtomicType '->' ArrowType;
   //   AtomicType = '(' Type ')'.
   if (type->type1()->ast_level() <= type->ast_level()) {
-    type_pprints_[type] = "(" + get(type->type1()) + ")->" + get(type->type2());
+    type_pprints_[type] = "(" + get(type->type1().get()) + ")->" + get(type->type2().get());
   } else {
-    type_pprints_[type] = get(type->type1()) + "->" + get(type->type2());
+    type_pprints_[type] = get(type->type1().get()) + "->" + get(type->type2().get());
   }
 }
 

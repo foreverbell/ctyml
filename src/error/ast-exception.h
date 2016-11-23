@@ -6,10 +6,6 @@
 
 class ast_exception : public std::exception {
  public:
-  ast_exception(Location location, std::string cfg) : location_(location) {
-    cfgs_.push_back(std::move(cfg));
-  }
-
   ast_exception(Location location, std::string cfg, std::string error)
     : location_(location), error_(std::move(error)) {
     cfgs_.push_back(std::move(cfg));
@@ -25,11 +21,10 @@ class ast_exception : public std::exception {
   virtual const char* what() const throw () {
     if (!is_msg_set_) {
       is_msg_set_ = true;
-      if (!error_.empty()) {
-        msg_.append(error_);
-        msg_.append("\n");
-      }
-      msg_ += "grammar stack:\n";
+      msg_.append("ast error: ");
+      msg_.append(error_);
+      msg_.append("\n");
+      msg_.append("grammar stack:\n");
       for (const std::string& cfg : cfgs_) {
         msg_.append("  " + cfg);
         msg_.append("\n");

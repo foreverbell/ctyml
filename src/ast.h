@@ -77,7 +77,6 @@
 #include <memory>
 #include <vector>
 
-#include "error.h"
 #include "location.h"
 #include "token.h"
 #include "visitor.h"
@@ -132,6 +131,7 @@ class TermType : public Locatable, public virtual Visitable<TermType> {
  public:
   TermType(Location location) : Locatable(location) { }
   virtual ~TermType() = default;
+  virtual TermType* clone() const = 0;
 
   // ast_level() denotes the level of this TermType node in AST.
   // Currently there are two levels, ArrowType(1) and AtomicType(2).
@@ -144,6 +144,7 @@ class TermType : public Locatable, public virtual Visitable<TermType> {
 class BoolTermType : public TermType, public VisitableImpl<TermType, BoolTermType> {
  public:
   BoolTermType(Location location) : TermType(location) { }
+  TermType* clone() const override { return new BoolTermType(location_); }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
@@ -153,6 +154,7 @@ class BoolTermType : public TermType, public VisitableImpl<TermType, BoolTermTyp
 class NatTermType : public TermType, public VisitableImpl<TermType, NatTermType> {
  public:
   NatTermType(Location location) : TermType(location) { }
+  TermType* clone() const override { return new NatTermType(location_); }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
@@ -162,6 +164,7 @@ class NatTermType : public TermType, public VisitableImpl<TermType, NatTermType>
 class UnitTermType : public TermType, public VisitableImpl<TermType, UnitTermType> {
  public:
   UnitTermType(Location location) : TermType(location) { }
+  TermType* clone() const override { return new UnitTermType(location_); }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
@@ -171,12 +174,14 @@ class UnitTermType : public TermType, public VisitableImpl<TermType, UnitTermTyp
 class ListTermType : public TermType, public VisitableImpl<TermType, ListTermType> {
  public:
   ListTermType(Location location, TermType* type) : TermType(location), type_(type) { }
+  TermType* clone() const override { return new ListTermType(location_, type_->clone()); }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
   bool Compare(const Context* ctx, const TermType* rhs) const override;
 
-  TermType* type() const { return type_.get(); }
+  std::unique_ptr<TermType>& type() { return type_; }
+  const std::unique_ptr<TermType>& type() const { return type_; }
 
  private:
   std::unique_ptr<TermType> type_;
@@ -185,6 +190,13 @@ class ListTermType : public TermType, public VisitableImpl<TermType, ListTermTyp
 class RecordTermType : public TermType, public VisitableImpl<TermType, RecordTermType> {
  public:
   RecordTermType(Location location) : TermType(location) { }
+  TermType* clone() const override {
+    RecordTermType* ret = new RecordTermType(location_);
+    for (size_t i = 0; i < fields_.size(); ++i) {
+      ret->add(fields_[i].first, fields_[i].second->clone());
+    }
+    return ret;
+  }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
@@ -201,8 +213,11 @@ class RecordTermType : public TermType, public VisitableImpl<TermType, RecordTer
   }
 
   size_t size() const { return fields_.size(); }
-  std::pair<std::string, TermType*> get(int index) const {
-    return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
+  std::pair<std::string, std::unique_ptr<TermType>&> get(int index) {
+    return {fields_.at(index).first, fields_[index].second};
+  }
+  std::pair<std::string, const std::unique_ptr<TermType>&> get(int index) const {
+    return {fields_.at(index).first, fields_[index].second};
   }
 
  private:
@@ -213,13 +228,16 @@ class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermT
  public:
   ArrowTermType(Location location, TermType* type1, TermType* type2)
     : TermType(location), type1_(type1), type2_(type2) { }
+  TermType* clone() const override { return new ArrowTermType(location_, type1_->clone(), type2_->clone()); }
 
   int ast_level() const override { return 1; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;
   bool Compare(const Context* ctx, const TermType* rhs) const override;
 
-  TermType* type1() const { return type1_.get(); }
-  TermType* type2() const { return type2_.get(); }
+  std::unique_ptr<TermType>& type1() { return type1_; }
+  const std::unique_ptr<TermType>& type1() const { return type1_; }
+  std::unique_ptr<TermType>& type2() { return type2_; }
+  const std::unique_ptr<TermType>& type2() const { return type2_; }
 
  private:
   std::unique_ptr<TermType> type1_, type2_;
@@ -228,6 +246,7 @@ class ArrowTermType : public TermType, public VisitableImpl<TermType, ArrowTermT
 class UserDefinedTermType : public TermType, public VisitableImpl<TermType, UserDefinedTermType> {
  public:
   UserDefinedTermType(Location location, int index) : TermType(location), index_(index) { }
+  TermType* clone() const override { return new UserDefinedTermType(location_, index_); }
 
   int ast_level() const override { return 2; }
   TermTypeComparator* CreateComparator(const Context* ctx) const override;

@@ -50,14 +50,14 @@ void TermTypeShifter::Visit(const UnitTermType* type) {
 
 void TermTypeShifter::Visit(const ListTermType* type) {
   type->type()->Accept(this);
-  shifted_types_[type] = std::make_unique<ListTermType>(type->location(), shifted_types_[type->type()].release());
+  shifted_types_[type] = std::make_unique<ListTermType>(type->location(), shifted_types_[type->type().get()].release());
 }
 
 void TermTypeShifter::Visit(const RecordTermType* type) {
   auto shifted_type = std::make_unique<RecordTermType>(type->location());
   for (size_t i = 0; i < type->size(); ++i) {
     type->get(i).second->Accept(this);
-    shifted_type->add(type->get(i).first, shifted_types_[type->get(i).second].release());
+    shifted_type->add(type->get(i).first, shifted_types_[type->get(i).second.get()].release());
   }
   shifted_types_[type] = std::move(shifted_type);
 }
@@ -66,7 +66,7 @@ void TermTypeShifter::Visit(const ArrowTermType* type) {
   type->type1()->Accept(this);
   type->type2()->Accept(this);
   shifted_types_[type] = std::make_unique<ArrowTermType>(
-      type->location(), shifted_types_[type->type1()].release(), shifted_types_[type->type2()].release());
+      type->location(), shifted_types_[type->type1().get()].release(), shifted_types_[type->type2().get()].release());
 }
 
 void TermTypeShifter::Visit(const UserDefinedTermType* type) {
@@ -74,7 +74,7 @@ void TermTypeShifter::Visit(const UserDefinedTermType* type) {
 }
 
 bool ListTermTypeComparator::Compare(const ListTermType* rhs) const {
-  return lhs_->type()->Compare(ctx_, rhs->type());
+  return lhs_->type()->Compare(ctx_, rhs->type().get());
 }
 
 bool RecordTermTypeComparator::Compare(const RecordTermType* rhs) const {
@@ -83,11 +83,11 @@ bool RecordTermTypeComparator::Compare(const RecordTermType* rhs) const {
   }
   unordered_map<string, const TermType*> field_map;
   for (int i = 0; i < lhs_->size(); ++i) {
-    field_map[lhs_->get(i).first] = lhs_->get(i).second;
+    field_map[lhs_->get(i).first] = lhs_->get(i).second.get();
   }
   for (int i = 0; i < rhs->size(); ++i) {
     auto iter = field_map.find(rhs->get(i).first);
-    if (iter == field_map.end() || !iter->second->Compare(ctx_, rhs->get(i).second)) {
+    if (iter == field_map.end() || !iter->second->Compare(ctx_, rhs->get(i).second.get())) {
       return false;
     }
   }
@@ -95,5 +95,5 @@ bool RecordTermTypeComparator::Compare(const RecordTermType* rhs) const {
 }
 
 bool ArrowTermTypeComparator::Compare(const ArrowTermType* rhs) const {
-  return lhs_->type1()->Compare(ctx_, rhs->type1()) && lhs_->type2()->Compare(ctx_, rhs->type2());
+  return lhs_->type1()->Compare(ctx_, rhs->type1().get()) && lhs_->type2()->Compare(ctx_, rhs->type2().get());
 }

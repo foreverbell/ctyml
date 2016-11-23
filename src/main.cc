@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "context.h"
+#include "error/ast-exception.h"
 #include "lexer.h"
 #include "location.h"
 #include "parser.h"

@@ -9,14 +9,18 @@ add_subdirectory (deps/gtest)
 add_definitions (-Wall -std=c++1z)
 
 file (GLOB SOURCE_FILES src/*.cc)
-add_executable (ctyml ${SOURCE_FILES})
+list(REMOVE_ITEM SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
+add_library (ctyml_lib ${SOURCE_FILES})
+
+add_executable (ctyml ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
+add_dependencies (ctyml ctyml_lib)
+target_link_libraries (ctyml ctyml_lib)
 
 # Tests.
 enable_testing ()
 include_directories (${GTEST_INCLUDE_DIRS} src/)
-file (GLOB TEST_FILES tests/*.cc src/*.cc)
-list(REMOVE_ITEM TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
+file (GLOB TEST_FILES tests/*.cc)
 add_executable (ctyml_test ${TEST_FILES})
-add_dependencies (ctyml_test gtest)
-target_link_libraries (ctyml_test gtest_main)
+add_dependencies (ctyml_test ctyml_lib gtest)
+target_link_libraries (ctyml_test ctyml_lib gtest_main)
 add_test (ctyml_test ctyml_test)

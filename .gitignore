@@ -12,3 +12,4 @@ install_manifest.txt
 ## binaries ##
 ctyml
 ctyml_test
+libctyml_lib.a

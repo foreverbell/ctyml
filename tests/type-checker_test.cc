@@ -146,5 +146,3 @@ TEST_F(TypeCheckerTest, TypeComparatorTest) {
   EXPECT_FALSE(CompareType("{x:Nat,y:B}", "F"));
   EXPECT_FALSE(CompareType("List[N]", "L"));
 }
-
-TEST_F

@@ -49,7 +49,7 @@ void TypeChecker::Visit(const UnaryTerm* term) {
     case UnaryTermToken::Fix: {
       ArrowTermType* const arrow_type = type_cast<ArrowTermType>(ctx_, subtype.get());
       if (!arrow_type) {
-        throw type_exception(term->location(), "<fix> expects Arrow type");
+        throw type_exception(term->location(), "<fix> expects arrow type");
       }
       if (!arrow_type->type1()->Compare(ctx_, arrow_type->type2().get())) {
         throw type_exception(term->location(), "result of <fix> body is not compatible with domain");
@@ -59,7 +59,7 @@ void TypeChecker::Visit(const UnaryTerm* term) {
     case UnaryTermToken::Head: {
       ListTermType* const list_type = type_cast<ListTermType>(ctx_, subtype.get());
       if (!list_type) {
-        throw type_exception(term->location(), "<head> expects List type");
+        throw type_exception(term->location(), "<head> expects list type");
       }
       typeof_[term] = unique_ptr<TermType>(std::move(list_type->type()));
     } break;
@@ -67,7 +67,7 @@ void TypeChecker::Visit(const UnaryTerm* term) {
     case UnaryTermToken::IsNil: {
       ListTermType* const list_type = type_cast<ListTermType>(ctx_, subtype.get());
       if (!list_type) {
-        throw type_exception(term->location(), "<tail / isnil> expects List type");
+        throw type_exception(term->location(), "<tail / isnil> expects list type");
       }
       typeof_[term] = std::move(subtype);
     } break;
@@ -97,7 +97,7 @@ void TypeChecker::Visit(const BinaryTerm* term) {
         throw type_exception(term->location(), "expects arrow type");
       }
       if (!arrow_type->type1()->Compare(ctx_, subtype2.get())) {
-        throw type_exception(term->location(), "parameter type is mismatch");
+        throw type_exception(term->location(), "parameter type mismatches");
       }
       typeof_[term] = std::move(arrow_type->type2());
     } break;
@@ -153,7 +153,7 @@ void TypeChecker::Visit(const ProjectTerm* term) {
 
   RecordTermType* const record_type = type_cast<RecordTermType>(ctx_, subtype.get());
   if (!record_type) {
-    throw type_exception(term->location(), "expect record type for field projection");
+    throw type_exception(term->location(), "field projection expects record type");
   }
   for (size_t i = 0; i < record_type->size(); ++i) {
     if (record_type->get(i).first == term->field()) {
@@ -161,7 +161,7 @@ void TypeChecker::Visit(const ProjectTerm* term) {
       return;
     }
   }
-  throw type_exception(term->location(), "field <" + term->field() + "> not found for projection");
+  throw type_exception(term->location(), "field <" + term->field() + "> not found for field projection");
 }
 
 void TypeChecker::Visit(const LetTerm* term) {

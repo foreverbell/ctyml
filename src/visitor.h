@@ -9,20 +9,22 @@ class Visitable {
   virtual void Accept(Visitor<Base>* visitor) const = 0;
 };
 
-// Virtual inheritance is required to solve the diamond inheritance issue.
-//
-//            Visitable
-//              / \
-//             /   \
-//            /     \
-// VisitableImpl   Abstract Class
-//            \     /
-//             \   /
-//              \ /
-//         Concrete Class
-//
-// Both VisitableImpl and Abstract class will inherit Visitable::Accept, but the static polymorphism implemenation of
-// Visitable::Accept lays in VisitableImpl. VisitableImpl and Abstact Class both need to inherit Visitable virtually.
+/*
+ * Virtual inheritance is required to solve the diamond inheritance issue.
+ *
+ *            Visitable
+ *              / \
+ *             /   \
+ *            /     \
+ * VisitableImpl   Abstract Class
+ *            \     /
+ *             \   /
+ *              \ /
+ *         Concrete Class
+ *
+ * Both VisitableImpl and Abstract class will inherit Visitable::Accept, but the static polymorphism implemenation of
+ * Visitable::Accept lays in VisitableImpl. VisitableImpl and Abstact Class both need to inherit Visitable virtually.
+ */
 
 template<class Base, class Derived>
 class VisitableImpl : public virtual Visitable<Base> {

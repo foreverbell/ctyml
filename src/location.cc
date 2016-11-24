@@ -13,7 +13,7 @@ Locator::Locator(const string& filename, const string& input) : filename_(filena
 
   linemap_.resize(nlines + 1);
   linemap_[0] = 0;
-  for (int i = 0; i < input_.length(); ++i) {
+  for (size_t i = 0; i < input_.length(); ++i) {
     if (input_[i] == '\n') {
       linemap_[cur_line++] = i + 1;
     }
@@ -69,8 +69,8 @@ void Locator::Error(int fd, Location location, const string& error) const {
   Locate(location, &line1, &column1, &line2, &column2);
 
   // Show one extra line.
-  int from = line1 == 0 ? 0 : linemap_[line1 - 1];
-  int to = line1 + 2 < linemap_.size() ? linemap_[line1 + 2] : input_.length();
+  size_t from = line1 == 0 ? 0 : linemap_[line1 - 1];
+  size_t to = line1 + 2 < int(linemap_.size()) ? linemap_[line1 + 2] : input_.length();
 
   for (size_t i = from; i < to; ++i) {
     if (i == location.begin) tty::red(fd);

@@ -53,5 +53,5 @@ class LexerIterator {
 
  private:
   const Lexer* const lexer_;
-  int offset_;
+  size_t offset_;
 };

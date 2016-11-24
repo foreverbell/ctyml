@@ -43,5 +43,5 @@ class Locator {
  private:
   const std::string filename_;
   const std::string& input_;
-  std::vector<int> linemap_;
+  std::vector<size_t> linemap_;
 };

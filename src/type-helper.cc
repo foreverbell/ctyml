@@ -82,10 +82,10 @@ bool RecordTermTypeComparator::Compare(const RecordTermType* rhs) const {
     return false;
   }
   unordered_map<string, const TermType*> field_map;
-  for (int i = 0; i < lhs_->size(); ++i) {
+  for (size_t i = 0; i < lhs_->size(); ++i) {
     field_map[lhs_->get(i).first] = lhs_->get(i).second.get();
   }
-  for (int i = 0; i < rhs->size(); ++i) {
+  for (size_t i = 0; i < rhs->size(); ++i) {
     auto iter = field_map.find(rhs->get(i).first);
     if (iter == field_map.end() || !iter->second->Compare(ctx_, rhs->get(i).second.get())) {
       return false;

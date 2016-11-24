@@ -43,7 +43,7 @@ sum l;
     return 0;
   }
 
-  for (int i = 0; i < stmts.size(); ++i) {
+  for (size_t i = 0; i < stmts.size(); ++i) {
     EvalStmt* eval_stmt = dynamic_cast<EvalStmt*>(stmts[i].get());
     BindTermStmt* term_stmt = dynamic_cast<BindTermStmt*>(stmts[i].get());
     BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());

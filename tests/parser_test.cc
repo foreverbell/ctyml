@@ -49,7 +49,7 @@ class ParserTest : public ::testing::Test {
 
     ASSERT_EQ(pprints.size(), stmts.size());
 
-    for (int i = 0; i < stmts.size(); ++i) {
+    for (size_t i = 0; i < stmts.size(); ++i) {
       EvalStmt* eval_stmt = dynamic_cast<EvalStmt*>(stmts[i].get());
       BindTermStmt* term_stmt = dynamic_cast<BindTermStmt*>(stmts[i].get());
       BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
@@ -80,39 +80,65 @@ TEST_F(ParserTest, TypeTest) {
 type T1 = Nat->Nat;
 type T2 = Bool->T1->(Bool->Bool)->{x: Nat, y: Bool}->Unit;
 type T3 = T2->T1->T2->List[Nat];
+10 as Nat;
+lambda x:Nat. x as T1;
 )");
   Test(R"(
 Nat->Nat
 Bool->T1->(Bool->Bool)->{x:Nat,y:Bool}->Unit
 T2->T1->T2->List[Nat]
+(10) as Nat
+lambda x:Nat. x as T1
 )");
 }
 
-TEST_F(ParserTest, TermTest) {
+TEST_F(ParserTest, LetTest) {
   Init(R"(
 let x = 10;
+let x = 10 in x;
 let y = false;
+let y = false in y;
+let _ = true in y;
 (if y then {x: true, y: unit} else {x: false, y: unit}).x;
 )");
   Test(R"(
 10
+let x_1 = 10 in x_1
 false
+let y_1 = false in y_1
+let _ = true in y
 (if y then {x:true,y:unit} else {x:false,y:unit}).x
 )");
 }
 
 TEST_F(ParserTest, LetRecTest) {
   Init(R"(
+letrec _:Nat = 1 in 2;
 letrec equal:Nat->Nat->Bool =
   lambda a:Nat b:Nat.
     if iszero a
       then iszero b
-      else if iszero b
-             then false
-             else equal (pred a) (pred b);
+      else
+        if iszero b
+          then false
+          else equal (pred a) (pred b);
+letrec equal_list:List[Nat]->List[Nat]->Bool =
+  lambda a:List[Nat] b:List[Nat].
+    if isnil a
+      then isnil b
+      else
+        if isnil b
+          then false
+          else
+            if equal (head a) (head b)
+              then equal_list (tail a) (tail b)
+              else false
+in equal_list (cons 3 nil[Nat]) (cons 3 (cons 2 nil[Nat]));
 )");
   Test(R"(
+let _ = fix (lambda _:Nat. 1) in 2
 fix (lambda equal:Nat->Nat->Bool. lambda a:Nat. lambda b:Nat. if iszero a then iszero b else if iszero b then false else equal (pred a) (pred b))
+let equal_list = fix (lambda equal_list:List[Nat]->List[Nat]->Bool. lambda a:List[Nat]. lambda b:List[Nat]. if isnil a then isnil b else if isnil b then false else if equal (head a) (head b) then equal_list (tail a) (tail b) else false) in equal_list (cons (3) nil[Nat]) (cons (3) (cons (2) nil[Nat]))
 )");
 }
 

@@ -95,7 +95,7 @@ string Context::PickFreshName(const string& name) {
   return fresh;
 }
 
-int Context::ToIndex(const string& name) {
+int Context::ToIndex(const string& name) const {
   const bindings_const_iterator iter = index_map_.find(name);
   return iter == index_map_.end() ? -1 : size() - 1 - iter->second.back();
 }

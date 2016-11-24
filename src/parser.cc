@@ -781,17 +781,18 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
 // Topmost = Statement
 //         | Statement Topmost
 
-vector<StmtPtr> Parser::ParseAST() {
+vector<StmtPtr> Parser::ParseAST(Context* ctx) {
   cfg_scope(R"(Topmost = Statement | Statement Topmost)");
 
   vector<StmtPtr> stmts;
   LexerIterator lexer_iter(lexer_);
-  Context ctx;
+  Context empty_ctx;
 
+  ctx = ctx != nullptr ? ctx : &empty_ctx;
   do {
     StmtPtr stmt;
     try {
-      stmt = LL::Statement(&lexer_iter, &ctx);
+      stmt = LL::Statement(&lexer_iter, ctx);
     } catch (ast_exception e) {
       throw ast_exception(std::move(e), CFG);
     }

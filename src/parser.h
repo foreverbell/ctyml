@@ -5,6 +5,7 @@
 
 #include "ast.h"
 
+class Context;
 class Lexer;
 
 class Parser {
@@ -15,7 +16,7 @@ class Parser {
 
   const Lexer* lexer() const { return lexer_; }
 
-  std::vector<std::unique_ptr<Stmt>> ParseAST();
+  std::vector<std::unique_ptr<Stmt>> ParseAST(Context* ctx);
 
  private:
   const Lexer* const lexer_;  // not owned.

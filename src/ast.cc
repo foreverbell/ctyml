@@ -7,7 +7,9 @@
 using std::unique_ptr;
 
 #define TermTypeCompare(Type) \
-  bool Type::Compare(const Context* ctx, const TermType* rhs) const { \
+  bool Type::Compare(const Context* ctx, const TermType* rhs_old) const { \
+    unique_ptr<TermType> simplified = SimplifyType(ctx, rhs_old); \
+    const TermType* rhs = simplified == nullptr ? rhs_old : simplified.get(); \
     unique_ptr<TermTypeComparator> comparator(rhs->CreateComparator(ctx)); \
     return comparator->Compare(this); \
   }
@@ -21,7 +23,6 @@ TermTypeCompare(ArrowTermType);
 
 bool UserDefinedTermType::Compare(const Context* ctx, const TermType* rhs) const {
   unique_ptr<TermType> simplified = SimplifyType(ctx, this);
-
   assert(simplified != nullptr);
   return simplified->Compare(ctx, rhs);
 }
@@ -51,8 +52,6 @@ TermTypeComparator* ArrowTermType::CreateComparator(const Context* ctx) const {
 }
 
 TermTypeComparator* UserDefinedTermType::CreateComparator(const Context* ctx) const {
-  unique_ptr<TermType> simplifed = SimplifyType(ctx, this);
-
-  assert(simplifed != nullptr);
-  return simplifed->CreateComparator(ctx);
+  // This function will never get executed, ensured by simplification in XXTermType::Compare.
+  return nullptr;
 }

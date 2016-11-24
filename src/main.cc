@@ -37,7 +37,7 @@ sum l;
   PrettyPrinter pprinter(&ctx);
 
   try {
-    stmts = parser.ParseAST();
+    stmts = parser.ParseAST(nullptr);
   } catch (const ast_exception& e) {
     lexer->locator()->Error(2, e.location(), e.what());
     return 0;

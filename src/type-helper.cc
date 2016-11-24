@@ -26,7 +26,7 @@ unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type) {
   auto shifted = shifter.Shift(ctx->get(ud_type->index()).second->type());
   auto deeper_shifted = SimplifyType(ctx, shifted.get());
 
-  return std::move(deeper_shifted == nullptr ? shifted : deeper_shifted);
+  return deeper_shifted == nullptr ? std::move(shifted) : std::move(deeper_shifted);
 }
 
 unique_ptr<TermType> TermTypeShifter::Shift(const TermType* type) {

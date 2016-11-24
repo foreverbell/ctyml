@@ -38,7 +38,7 @@ class Context final {
   std::string PickFreshName(const std::string& name);
 
   // Returns the smallest index (logical index), "-1" if not found.
-  int ToIndex(const std::string& name);
+  int ToIndex(const std::string& name) const;
 
   const std::pair<std::string, std::unique_ptr<Binding>>& get(int index) const {
     return bindings_.at(bindings_.size() - 1 - index);

@@ -6,7 +6,7 @@ project (ctyml CXX)
 set (CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
 add_subdirectory (deps/gtest)
-add_definitions (-Wall -std=c++1z)
+add_definitions (-Wall -std=c++1z -g)
 
 file (GLOB SOURCE_FILES src/*.cc)
 list(REMOVE_ITEM SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)

@@ -49,12 +49,12 @@ sum l;
     BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
 
     if (eval_stmt != nullptr) {
-      cout << pprinter.PrettyPrint(eval_stmt->term()) << endl;
+      cout << pprinter.PrettyPrint(eval_stmt->term().get()) << endl;
     } else if (term_stmt != nullptr) {
-      cout << pprinter.PrettyPrint(term_stmt->term()) << endl;
+      cout << pprinter.PrettyPrint(term_stmt->term().get()) << endl;
       ctx.AddName(term_stmt->variable());
     } else if (type_stmt != nullptr) {
-      cout << pprinter.PrettyPrint(type_stmt->type()) << endl;
+      cout << pprinter.PrettyPrint(type_stmt->type().get()) << endl;
       ctx.AddName(type_stmt->type_alias());
     }
   }

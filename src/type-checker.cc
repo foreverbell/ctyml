@@ -18,6 +18,13 @@ T* type_cast(const Context* ctx, TermType* ptr) {
 
 }  // namespace
 
+unique_ptr<TermType> TypeChecker::TypeCheck(const Term* term) {
+  term->Accept(this);
+  unique_ptr<TermType> type = typeof(term);
+  typeof_.clear();
+  return type;
+}
+
 void TypeChecker::Visit(const NullaryTerm* term) {
   switch (term->type()) {
     case NullaryTermToken::Unit: {
@@ -116,7 +123,7 @@ void TypeChecker::Visit(const TernaryTerm* term) {
     case TernaryTermToken::If: {
       BoolTermType* const bool_type = type_cast<BoolTermType>(ctx_, subtype1.get());
       if (!bool_type) {
-        throw type_exception(term->location(), "guard of conditional not a boolean");
+        throw type_exception(term->location(), "guard of conditional is not a boolean");
       }
       if (!subtype2->Compare(ctx_, subtype3.get())) {
         throw type_exception(term->location(), "arms of conditional have different types");

@@ -34,6 +34,8 @@ class Context final {
   void AddBinding(const std::string& name, Binding* binding);
   void AddName(const std::string& name);
   void DropBindings(size_t n);
+  void DropBindingsTo(size_t new_size) { DropBindings(size() - new_size); }
+
   // Picks one fresh alias of <name> that does not appear in <bindings_>.
   std::string PickFreshName(const std::string& name);
 

@@ -12,6 +12,8 @@ class TypeChecker : public Visitor<Term> {
  public:
   TypeChecker(Context* ctx) : ctx_(ctx) { }
 
+  std::unique_ptr<TermType> TypeCheck(const Term*);
+
   void Visit(const NullaryTerm*) override;
   void Visit(const UnaryTerm*) override;
   void Visit(const BinaryTerm*) override;

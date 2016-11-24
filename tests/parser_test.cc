@@ -4,48 +4,32 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <sstream>
 
 #include "ast.h"
 #include "context.h"
 #include "lexer.h"
 #include "pprinter.h"
+#include "test-utils.h"
 
 using std::string;
-using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 
 class ParserTest : public ::testing::Test {
- public:
-  ParserTest() : pprinter_(&ctx_) { }
-
  protected:
-  void Init(const string& input) {
-    lexer_.reset(Lexer::Create(input));
-    ASSERT_TRUE(lexer_ != nullptr);
-  }
-
-  void TestThrows(const string& throws) {
+  void TestParserThrows(const string& input, const string& throws) {
     // TODO(foreverbell): Implement it.
   }
 
-  void Test(const string& output) {
-    parser_ = std::make_unique<Parser>(lexer_.get());
+  void TestParser(const string& input, const string& output) {
+    unique_ptr<Lexer> lexer(Lexer::Create(input));
+    unique_ptr<Parser> parser = std::make_unique<Parser>(lexer.get());
+    Context ctx;
+    PrettyPrinter pprinter(&ctx);
 
     vector<unique_ptr<Stmt>> stmts;
-    ASSERT_NO_THROW(stmts = parser_->ParseAST(nullptr));
-
-    stringstream ss(output);
-    vector<string> pprints;
-
-    while (true) {
-      string tmp;
-      if (std::getline(ss, tmp)) {
-        if (tmp.empty()) continue;
-        pprints.push_back(tmp);
-      } else break;
-    }
+    ASSERT_NO_THROW(stmts = parser->ParseAST(nullptr));
+    vector<string> pprints = SplitByLine(output);
 
     ASSERT_EQ(pprints.size(), stmts.size());
 
@@ -55,35 +39,28 @@ class ParserTest : public ::testing::Test {
       BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
 
       if (eval_stmt != nullptr) {
-        EXPECT_EQ(pprints[i], pprinter_.PrettyPrint(eval_stmt->term()));
+        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(eval_stmt->term().get()));
       } else if (term_stmt != nullptr) {
-        EXPECT_EQ(pprints[i], pprinter_.PrettyPrint(term_stmt->term()));
-        ctx_.AddName(term_stmt->variable());
+        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(term_stmt->term().get()));
+        ctx.AddName(term_stmt->variable());
       } else if (type_stmt != nullptr) {
-        EXPECT_EQ(pprints[i], pprinter_.PrettyPrint(type_stmt->type()));
-        ctx_.AddName(type_stmt->type_alias());
+        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type_stmt->type().get()));
+        ctx.AddName(type_stmt->type_alias());
       } else {
         FAIL() << "unknown stmt.";
       }
     }
   }
-
-  Context ctx_;
-  PrettyPrinter pprinter_;
-
-  unique_ptr<Lexer> lexer_;
-  unique_ptr<Parser> parser_;
 };
 
 TEST_F(ParserTest, TypeTest) {
-  Init(R"(
+  TestParser(R"(
 type T1 = Nat->Nat;
 type T2 = Bool->T1->(Bool->Bool)->{x: Nat, y: Bool}->Unit;
 type T3 = T2->T1->T2->List[Nat];
 10 as Nat;
 lambda x:Nat. x as T1;
-)");
-  Test(R"(
+)", R"(
 Nat->Nat
 Bool->T1->(Bool->Bool)->{x:Nat,y:Bool}->Unit
 T2->T1->T2->List[Nat]
@@ -93,15 +70,14 @@ lambda x:Nat. x as T1
 }
 
 TEST_F(ParserTest, LetTest) {
-  Init(R"(
+  TestParser(R"(
 let x = 10;
 let x = 10 in x;
 let y = false;
 let y = false in y;
 let _ = true in y;
 (if y then {x: true, y: unit} else {x: false, y: unit}).x;
-)");
-  Test(R"(
+)", R"(
 10
 let x_1 = 10 in x_1
 false
@@ -112,7 +88,7 @@ let _ = true in y
 }
 
 TEST_F(ParserTest, LetRecTest) {
-  Init(R"(
+  TestParser(R"(
 letrec _:Nat = 1 in 2;
 letrec equal:Nat->Nat->Bool =
   lambda a:Nat b:Nat.
@@ -134,8 +110,7 @@ letrec equal_list:List[Nat]->List[Nat]->Bool =
               then equal_list (tail a) (tail b)
               else false
 in equal_list (cons 3 nil[Nat]) (cons 3 (cons 2 nil[Nat]));
-)");
-  Test(R"(
+)", R"(
 let _ = fix (lambda _:Nat. 1) in 2
 fix (lambda equal:Nat->Nat->Bool. lambda a:Nat. lambda b:Nat. if iszero a then iszero b else if iszero b then false else equal (pred a) (pred b))
 let equal_list = fix (lambda equal_list:List[Nat]->List[Nat]->Bool. lambda a:List[Nat]. lambda b:List[Nat]. if isnil a then isnil b else if isnil b then false else if equal (head a) (head b) then equal_list (tail a) (tail b) else false) in equal_list (cons (3) nil[Nat]) (cons (3) (cons (2) nil[Nat]))
@@ -143,12 +118,11 @@ let equal_list = fix (lambda equal_list:List[Nat]->List[Nat]->Bool. lambda a:Lis
 }
 
 TEST_F(ParserTest, AppTermTest) {
-  Init(R"(
+  TestParser(R"(
 (succ {x: 1, y: 2}).x;
 succ ({x: 1, y: 2}.x);
 head (cons (lambda x:Nat->Nat. x) nil[Nat->Nat]) (lambda x:Nat->Nat. x) (lambda x:Nat->Nat. x);
-)");
-  Test(R"(
+)", R"(
 (succ {x:1,y:2}).x
 succ {x:1,y:2}.x
 head (cons (lambda x:Nat->Nat. x) nil[Nat->Nat]) (lambda x:Nat->Nat. x) (lambda x:Nat->Nat. x)

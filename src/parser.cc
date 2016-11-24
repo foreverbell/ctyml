@@ -789,11 +789,13 @@ vector<StmtPtr> Parser::ParseAST(Context* ctx) {
   Context empty_ctx;
 
   ctx = ctx != nullptr ? ctx : &empty_ctx;
+  const size_t old_size = ctx->size();
   do {
     StmtPtr stmt;
     try {
       stmt = LL::Statement(&lexer_iter, ctx);
     } catch (ast_exception e) {
+      ctx->DropBindingsTo(old_size);
       throw ast_exception(std::move(e), CFG);
     }
     if (stmt == nullptr) {
@@ -801,5 +803,7 @@ vector<StmtPtr> Parser::ParseAST(Context* ctx) {
     }
     stmts.push_back(std::move(stmt));
   } while (!lexer_iter.eof());
+  // Restore the Context to leave it unchanged.
+  ctx->DropBindingsTo(old_size);
   return stmts;
 }

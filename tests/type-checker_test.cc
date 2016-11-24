@@ -10,6 +10,7 @@
 #include "context.h"
 #include "lexer.h"
 #include "parser.h"
+#include "type-helper.h"
 
 using std::string;
 using std::unique_ptr;
@@ -22,6 +23,7 @@ class TypeCheckerTest : public ::testing::Test {
 type N = Nat;
 type B = Bool;
 type T = N->N;
+type T1 = T;
 type F = {x: N, y: N};
 )";
 
@@ -30,7 +32,7 @@ type F = {x: N, y: N};
     Parser parser(lexer.get());
 
     predefined_type_stmts_ = parser.ParseAST(nullptr);
-    assert(predefined_type_stmts_.size() == 4);
+    assert(predefined_type_stmts_.size() == 5);
     for (size_t i = 0; i < predefined_type_stmts_.size(); ++i) {
       const BindTypeStmt* stmt = dynamic_cast<const BindTypeStmt*>(predefined_type_stmts_[i].get());
       ctx_.AddBinding(stmt->type_alias(), new Binding(nullptr, stmt->type()));
@@ -44,7 +46,7 @@ type F = {x: N, y: N};
 
     vector<unique_ptr<Stmt>> stmts = parser.ParseAST(&ctx_);
     ctx_.DropBindings(1);
-    assert(ctx_.size() == 4);
+    assert(ctx_.size() == 5);
     assert(stmts.size() == 1);
     const BindTypeStmt* stmt = dynamic_cast<const BindTypeStmt*>(stmts[0].get());
     return unique_ptr<TermType>(stmt->type()->clone());
@@ -57,6 +59,14 @@ type F = {x: N, y: N};
   Context ctx_;
   vector<unique_ptr<Stmt>> predefined_type_stmts_;
 };
+
+TEST_F(TypeCheckerTest, SimplifyTypeTest) {
+  EXPECT_TRUE(SimplifyType(&ctx_, CreateType("N").get())->Compare(&ctx_, CreateType("Nat").get()));
+  EXPECT_TRUE(SimplifyType(&ctx_, CreateType("B").get())->Compare(&ctx_, CreateType("Bool").get()));
+  EXPECT_TRUE(SimplifyType(&ctx_, CreateType("T").get())->Compare(&ctx_, CreateType("N->N").get()));
+  EXPECT_TRUE(SimplifyType(&ctx_, CreateType("T1").get())->Compare(&ctx_, CreateType("N->N").get()));
+  EXPECT_TRUE(SimplifyType(&ctx_, CreateType("F").get())->Compare(&ctx_, CreateType("{x:N,y:N}").get()));
+}
 
 TEST_F(TypeCheckerTest, TypeComparatorTest) {
   EXPECT_TRUE(CompareType("Nat", "N"));

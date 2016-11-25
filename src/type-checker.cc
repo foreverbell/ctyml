@@ -11,9 +11,12 @@ using std::unique_ptr;
 namespace {
 
 template <typename T>
-T* type_cast(const Context* ctx, TermType* ptr) {
-  const unique_ptr<TermType> simplified_ptr = SimplifyType(ctx, ptr);
-  return dynamic_cast<T*>(simplified_ptr == nullptr ? ptr : simplified_ptr.get());
+T* type_cast(const Context* ctx, unique_ptr<TermType>* ptr) {
+  unique_ptr<TermType> simplified_ptr = SimplifyType(ctx, ptr->get());
+  if (simplified_ptr != nullptr) {
+    *ptr = std::move(simplified_ptr);
+  }
+  return dynamic_cast<T*>(ptr->get());
 }
 
 }  // namespace
@@ -46,37 +49,49 @@ void TypeChecker::Visit(const UnaryTerm* term) {
 
   switch (term->type()) {
     case UnaryTermToken::Succ:
-    case UnaryTermToken::Pred:
-    case UnaryTermToken::IsZero: {
-      if (!type_cast<NatTermType>(ctx_, subtype.get())) {
-        throw type_exception(term->location(), "<succ / pred / iszero> expects Nat type");
+    case UnaryTermToken::Pred: {
+      if (!type_cast<NatTermType>(ctx_, &subtype)) {
+        throw type_exception(term->location(), "<succ> or <pred> expects Nat type");
       }
       typeof_[term] = std::move(subtype);
     } break;
+    case UnaryTermToken::IsZero: {
+      if (!type_cast<NatTermType>(ctx_, &subtype)) {
+        throw type_exception(term->location(), "<iszero> expects Nat type");
+      }
+      typeof_[term] = std::make_unique<BoolTermType>(term->location());
+    } break;
     case UnaryTermToken::Fix: {
-      ArrowTermType* const arrow_type = type_cast<ArrowTermType>(ctx_, subtype.get());
+      ArrowTermType* const arrow_type = type_cast<ArrowTermType>(ctx_, &subtype);
       if (!arrow_type) {
+        // Looks like this exception can not be triggered.
         throw type_exception(term->location(), "<fix> expects arrow type");
       }
       if (!arrow_type->type1()->Compare(ctx_, arrow_type->type2().get())) {
         throw type_exception(term->location(), "result of <fix> body is not compatible with domain");
       }
-      typeof_[term] = unique_ptr<TermType>(std::move(arrow_type->type1()));
+      typeof_[term] = std::move(arrow_type->type1());
     } break;
     case UnaryTermToken::Head: {
-      ListTermType* const list_type = type_cast<ListTermType>(ctx_, subtype.get());
+      ListTermType* const list_type = type_cast<ListTermType>(ctx_, &subtype);
       if (!list_type) {
         throw type_exception(term->location(), "<head> expects list type");
       }
-      typeof_[term] = unique_ptr<TermType>(std::move(list_type->type()));
+      typeof_[term] = std::move(list_type->type());
     } break;
-    case UnaryTermToken::Tail:
-    case UnaryTermToken::IsNil: {
-      ListTermType* const list_type = type_cast<ListTermType>(ctx_, subtype.get());
+    case UnaryTermToken::Tail: {
+      ListTermType* const list_type = type_cast<ListTermType>(ctx_, &subtype);
       if (!list_type) {
-        throw type_exception(term->location(), "<tail / isnil> expects list type");
+        throw type_exception(term->location(), "<tail> expects list type");
       }
       typeof_[term] = std::move(subtype);
+    } break;
+    case UnaryTermToken::IsNil: {
+      ListTermType* const list_type = type_cast<ListTermType>(ctx_, &subtype);
+      if (!list_type) {
+        throw type_exception(term->location(), "<isnil> expects list type");
+      }
+      typeof_[term] = std::make_unique<BoolTermType>(term->location());
     } break;
   }
 }
@@ -89,7 +104,7 @@ void TypeChecker::Visit(const BinaryTerm* term) {
 
   switch (term->type()) {
     case BinaryTermToken::Cons: {
-      ListTermType* const list_type = type_cast<ListTermType>(ctx_, subtype2.get());
+      ListTermType* const list_type = type_cast<ListTermType>(ctx_, &subtype2);
       if (!list_type) {
         throw type_exception(term->location(), "<cons> expects List type on 2nd parameter");
       }
@@ -99,7 +114,7 @@ void TypeChecker::Visit(const BinaryTerm* term) {
       typeof_[term] = std::move(subtype2);
     } break;
     case BinaryTermToken::App: {
-      ArrowTermType* const arrow_type = type_cast<ArrowTermType>(ctx_, subtype1.get());
+      ArrowTermType* const arrow_type = type_cast<ArrowTermType>(ctx_, &subtype1);
       if (!arrow_type) {
         throw type_exception(term->location(), "expects arrow type");
       }
@@ -121,7 +136,7 @@ void TypeChecker::Visit(const TernaryTerm* term) {
 
   switch (term->type()) {
     case TernaryTermToken::If: {
-      BoolTermType* const bool_type = type_cast<BoolTermType>(ctx_, subtype1.get());
+      BoolTermType* const bool_type = type_cast<BoolTermType>(ctx_, &subtype1);
       if (!bool_type) {
         throw type_exception(term->location(), "guard of conditional is not a boolean");
       }
@@ -140,7 +155,7 @@ void TypeChecker::Visit(const NilTerm* term) {
 void TypeChecker::Visit(const VariableTerm* term) {
   const TermType* const type = ctx_->get(term->index()).second->type();
   assert(type != nullptr);
-  TermTypeShifter shifter(term->index());
+  TermTypeShifter shifter(term->index() + 1);
   typeof_[term] = shifter.Shift(type);
 }
 
@@ -158,7 +173,7 @@ void TypeChecker::Visit(const ProjectTerm* term) {
   term->term()->Accept(this);
   unique_ptr<TermType> subtype = typeof(term->term());
 
-  RecordTermType* const record_type = type_cast<RecordTermType>(ctx_, subtype.get());
+  RecordTermType* const record_type = type_cast<RecordTermType>(ctx_, &subtype);
   if (!record_type) {
     throw type_exception(term->location(), "field projection expects record type");
   }
@@ -173,7 +188,8 @@ void TypeChecker::Visit(const ProjectTerm* term) {
 
 void TypeChecker::Visit(const LetTerm* term) {
   term->bind_term()->Accept(this);
-  ctx_->AddBinding(term->pattern()->variable(), new Binding(nullptr, typeof(term->bind_term()).get()));
+  unique_ptr<TermType> bind_type = typeof(term->bind_term());
+  ctx_->AddBinding(term->pattern()->variable(), new Binding(nullptr, bind_type.get()));
   term->body_term()->Accept(this);
   ctx_->DropBindings(1);
 
@@ -189,7 +205,8 @@ void TypeChecker::Visit(const AbsTerm* term) {
 
   unique_ptr<TermType> subtype = typeof(term->term());
   TermTypeShifter shifter(-1);
-  typeof_[term] = shifter.Shift(subtype.get());
+  typeof_[term] = std::make_unique<ArrowTermType>(term->location(), term->variable_type()->clone(),
+                                                  shifter.Shift(subtype.get()).release());
 }
 
 void TypeChecker::Visit(const AscribeTerm* term) {

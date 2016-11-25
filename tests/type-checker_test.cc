@@ -8,6 +8,7 @@
 
 #include "ast.h"
 #include "context.h"
+#include "error/type-exception.h"
 #include "lexer.h"
 #include "parser.h"
 #include "pprinter.h"
@@ -83,21 +84,31 @@ type L = List[T1];
     for (size_t i = 0; i < stmts.size(); ++i) {
       EvalStmt* eval_stmt = dynamic_cast<EvalStmt*>(stmts[i].get());
       BindTermStmt* term_stmt = dynamic_cast<BindTermStmt*>(stmts[i].get());
-      BindTypeStmt* type_stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
 
       if (eval_stmt != nullptr) {
-        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type_checker.TypeCheck(eval_stmt->term().get()).get()));
+        unique_ptr<TermType> type;
+        
+        try {
+          type = type_checker.TypeCheck(eval_stmt->term().get());
+        } catch (const type_exception& e) {
+          EXPECT_EQ(pprints[i], e.what());
+          continue;
+        }
+        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type.get()));
       } else if (term_stmt != nullptr) {
-        unique_ptr<TermType> type = type_checker.TypeCheck(term_stmt->term().get());
-        EXPECT_EQ(pprints[i], term_stmt->variable() + " : " + 
-                              pprinter.PrettyPrint(type_checker.TypeCheck(term_stmt->term().get()).get()));
+        unique_ptr<TermType> type;
+ 
+        try {
+          type = type_checker.TypeCheck(term_stmt->term().get());
+        } catch (const type_exception& e) {
+          EXPECT_EQ(pprints[i], e.what());
+          continue;
+        }
+        EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type.get()));
         ctx_.AddBinding(term_stmt->variable(), new Binding(term_stmt->term().get(), type.get()));
         defined_types_.push_back(std::move(type));
-      } else if (type_stmt != nullptr) {
-        EXPECT_EQ(pprints[i], type_stmt->type_alias() + " = " + pprinter.PrettyPrint(type_stmt->type().get()));
-        ctx_.AddBinding(type_stmt->type_alias(), new Binding(nullptr, type_stmt->type().get()));
-        defined_types_.push_back(std::move(type_stmt->type()));
       } else {
+        // Leave BindTypeStmt unhandled.
         FAIL() << "unknown stmt.";
       }
     }
@@ -133,7 +144,7 @@ TEST_F(TypeCheckerTest, TypeComparatorTest) {
   EXPECT_TRUE(CompareType("{x:Nat,y:N}", "F"));
   EXPECT_TRUE(CompareType("{x:N,y:N}", "F"));
   EXPECT_TRUE(CompareType("List[T1]", "L"));
-  EXPECT_TRUE(CompareType("List[T]", "L"));
+  EXPECT_TRUE(CompareType("List[T]", "List[Nat->Nat]"));
   EXPECT_TRUE(CompareType("List[T]", "List[T1]"));
 
   EXPECT_FALSE(CompareType("Bool", "N"));
@@ -145,4 +156,116 @@ TEST_F(TypeCheckerTest, TypeComparatorTest) {
   EXPECT_FALSE(CompareType("{x:Bool,y:Nat}", "F"));
   EXPECT_FALSE(CompareType("{x:Nat,y:B}", "F"));
   EXPECT_FALSE(CompareType("List[N]", "L"));
+}
+
+TEST_F(TypeCheckerTest, BadNat) {
+  TestTypeChecker(R"(
+succ true;
+pred false;
+iszero {x: 1};
+)", R"(
+type error: <succ> or <pred> expects Nat type
+type error: <succ> or <pred> expects Nat type
+type error: <iszero> expects Nat type
+)");
+}
+
+TEST_F(TypeCheckerTest, BadList) {
+  TestTypeChecker(R"(
+cons 1 2;
+cons (cons 2 nil[Nat]) nil[Bool];
+isnil (let x = 2 in succ x);
+tail (let x = false in x);
+head (lambda x:List[Nat]. x);
+)", R"(
+type error: <cons> expects List type on 2nd parameter
+type error: list head and tail of <cons> are incompatible
+type error: <isnil> expects list type
+type error: <tail> expects list type
+type error: <head> expects list type
+)");
+}
+
+TEST_F(TypeCheckerTest, BadFix) {
+  TestTypeChecker(R"(
+letrec foo:Nat->Nat = 2;
+letrec bar:Nat->Nat = lambda x:Nat. true;
+)", R"(
+type error: result of <fix> body is not compatible with domain
+type error: result of <fix> body is not compatible with domain
+)");
+}
+
+TEST_F(TypeCheckerTest, BadIf) {
+  TestTypeChecker(R"(
+if 1 then false else true;
+if true then unit else (lambda x:Nat. x);
+)", R"(
+type error: guard of conditional is not a boolean
+type error: arms of conditional have different types
+)");
+}
+
+TEST_F(TypeCheckerTest, BadFieldProjection) {
+  TestTypeChecker(R"(
+{x: true, y: false}.z;
+true.x;
+)", R"(
+type error: field <z> not found for field projection
+type error: field projection expects record type
+)");
+}
+
+TEST_F(TypeCheckerTest, BadAscribe) {
+  TestTypeChecker(R"(
+if true then (1 as Bool) else false;
+)", R"(
+type error: body of as-term does not have the expected type
+)");
+}
+
+TEST_F(TypeCheckerTest, BadApp) {
+  TestTypeChecker(R"(
+(lambda x:Nat. x) 1 2;
+(lambda x:Nat. x) true;
+)", R"(
+type error: expects arrow type
+type error: parameter type mismatches
+)");
+}
+
+TEST_F(TypeCheckerTest, RightType) {
+  TestTypeChecker(R"(
+letrec equal:Nat->Nat->Bool =
+  lambda a:Nat b:Nat.
+    if iszero a
+      then iszero b
+      else
+        if iszero b
+          then false
+          else equal (pred a) (pred b);
+letrec equal_list:List[Nat]->List[Nat]->Bool =
+  lambda a:List[Nat] b:List[Nat].
+    if isnil a
+      then isnil b
+      else
+        if isnil b
+          then false
+          else
+            if equal (head a) (head b)
+              then equal_list (tail a) (tail b)
+              else false
+in equal_list ((cons 3 nil[Nat]) as List[Nat]) ((cons 3 (cons 2 nil[Nat])) as List[Nat]);
+({x: 12, y: 23} as {y: Nat, x: Nat}).x;
+0 as N;
+(lambda x:N. x) 1;
+(lambda y:L. head y) (cons (lambda x:Nat. succ x) nil[Nat->Nat]);
+)", R"(
+Nat->Nat->Bool
+Bool
+Nat
+Nat
+N
+T1
+)");
 }

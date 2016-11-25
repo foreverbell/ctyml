@@ -15,7 +15,6 @@ class type_exception : public std::exception {
       is_msg_set_ = true;
       msg_.append("type error: ");
       msg_.append(error_);
-      msg_.append("\n");
     }
     return msg_.c_str();
   }

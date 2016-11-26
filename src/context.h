@@ -51,7 +51,7 @@ class Context final {
   }
 
  private:
-  // Stores de bruijn index in reverse order.
+  // Stores deBruijn index in reverse order.
   std::map<std::string, std::vector<int>> index_map_;
   std::vector<std::pair<std::string, std::unique_ptr<Binding>>> bindings_;
 

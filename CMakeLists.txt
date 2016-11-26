@@ -9,13 +9,13 @@ add_subdirectory (deps/gtest)
 add_definitions (-Wall -std=c++1z)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
-  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
-  set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+  set (CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
+  set (CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
   add_custom_target (ctyml_coverage ./test-coverage.sh)
 endif ()
 
 file (GLOB SOURCE_FILES src/*.cc)
-list(REMOVE_ITEM SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
+list (REMOVE_ITEM SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
 add_library (ctyml_lib ${SOURCE_FILES})
 
 add_executable (ctyml ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)

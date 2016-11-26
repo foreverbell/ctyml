@@ -7,15 +7,6 @@
 
 class Context;
 
-class TermType;
-class BoolTermType;
-class NatTermType;
-class UnitTermType;
-class ListTermType;
-class RecordTermType;
-class ArrowTermType;
-class UserDefinedTermType;
-
 // Recusively simplify a type in the given context <ctx>, until the outer-most type is not user-defined.
 // Returns nullptr if no simplification can be done.
 std::unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type);
@@ -24,16 +15,9 @@ std::unique_ptr<TermType> SimplifyType(const Context* ctx, const TermType* type)
 class TermTypeShifter : public Visitor<TermType> {
  public:
   TermTypeShifter(int delta) : delta_(delta) { }
+  TermTypeVisitorOverrides;
 
   std::unique_ptr<TermType> Shift(const TermType*);
-
-  void Visit(const BoolTermType*) override;
-  void Visit(const NatTermType*) override;
-  void Visit(const UnitTermType*) override;
-  void Visit(const ListTermType*) override;
-  void Visit(const RecordTermType*) override;
-  void Visit(const ArrowTermType*) override;
-  void Visit(const UserDefinedTermType*) override;
 
  private:
   const int delta_;

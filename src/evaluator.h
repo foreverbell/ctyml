@@ -11,17 +11,7 @@ class Context;
 
 class TermMapper : public Visitor<Term> {
  public:
-  void Visit(const NullaryTerm*) override;
-  void Visit(const UnaryTerm*) override;
-  void Visit(const BinaryTerm*) override;
-  void Visit(const TernaryTerm*) override;
-  void Visit(const NilTerm*) override;
-  void Visit(const VariableTerm*) override;
-  void Visit(const RecordTerm*) override;
-  void Visit(const ProjectTerm*) override;
-  void Visit(const LetTerm*) override;
-  void Visit(const AbsTerm*) override;
-  void Visit(const AscribeTerm*) override;
+  TermVisitorOverrides;
 
   virtual std::unique_ptr<Term> VariableMap(Location location, int var) = 0;
 
@@ -67,20 +57,9 @@ class TermSubstituter : public TermMapper {
 class TermEvaluator : public Visitor<Term> {
  public:
   TermEvaluator(Context* ctx) : ctx_(ctx) { }
+  TermVisitorOverrides;
 
   std::unique_ptr<Term> Evaluate(const Term*);
-
-  void Visit(const NullaryTerm*) override;
-  void Visit(const UnaryTerm*) override;
-  void Visit(const BinaryTerm*) override;
-  void Visit(const TernaryTerm*) override;
-  void Visit(const NilTerm*) override;
-  void Visit(const VariableTerm*) override;
-  void Visit(const RecordTerm*) override;
-  void Visit(const ProjectTerm*) override;
-  void Visit(const LetTerm*) override;
-  void Visit(const AbsTerm*) override;
-  void Visit(const AscribeTerm*) override;
 
  private:
   std::unique_ptr<Term> eval(const Term* term) {

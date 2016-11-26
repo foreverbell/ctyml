@@ -12,28 +12,8 @@ class Context;
 class PrettyPrinter : public Visitor<Term>, public Visitor<TermType> {
  public:
   PrettyPrinter(Context* ctx) : ctx_(ctx) { }
-
-  // Term visitors.
-  void Visit(const NullaryTerm*) override;
-  void Visit(const UnaryTerm*) override;
-  void Visit(const BinaryTerm*) override;
-  void Visit(const TernaryTerm*) override;
-  void Visit(const NilTerm*) override;
-  void Visit(const VariableTerm*) override;
-  void Visit(const RecordTerm*) override;
-  void Visit(const ProjectTerm*) override;
-  void Visit(const LetTerm*) override;
-  void Visit(const AbsTerm*) override;
-  void Visit(const AscribeTerm*) override;
-
-  // Type visitors.
-  void Visit(const BoolTermType*) override;
-  void Visit(const NatTermType*) override;
-  void Visit(const UnitTermType*) override;
-  void Visit(const ListTermType*) override;
-  void Visit(const RecordTermType*) override;
-  void Visit(const ArrowTermType*) override;
-  void Visit(const UserDefinedTermType*) override;
+  TermVisitorOverrides;
+  TermTypeVisitorOverrides;
 
   std::string PrettyPrint(const Term* term);
   std::string PrettyPrint(const TermType* type);

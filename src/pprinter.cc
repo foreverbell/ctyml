@@ -187,7 +187,7 @@ void PrettyPrinter::Visit(const ProjectTerm* term) {
 void PrettyPrinter::Visit(const LetTerm* term) {
   term->bind_term()->Accept(this);
 
-  string fresh = ctx_->PickFreshName(term->pattern()->variable());
+  string fresh = ctx_->PickFreshName(term->variable());
   term->body_term()->Accept(this);
   ctx_->DropBindings(1);
 

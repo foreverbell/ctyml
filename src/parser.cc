@@ -156,7 +156,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
           assign_or_throw(body, Term(lexer, ctx));
           ctx->DropBindings(1);  // throws away the binding introduced in Pattern.
           return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
-                                     pattern.release(), term.release(), body.release()));
+                                     pattern->variable(), term.release(), body.release()));
         }());
         pop_or_throw(TokenType::Semi);
         return StmtPtr(new EvalStmt(Location(token->location(), lexer->last_loc()), stmt_term.release()));
@@ -203,7 +203,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
               new UnaryTerm(location, UnaryTermToken::Fix,
                 new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
           return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
-                                     pattern.release(), fix_term.release(), body.release()));
+                                     pattern->variable(), fix_term.release(), body.release()));
         }());
         pop_or_throw(TokenType::Semi);
         return StmtPtr(new EvalStmt(Location(token->location(), lexer->last_loc()), stmt_term.release()));
@@ -740,7 +740,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(body, Term(lexer, ctx));
       ctx->DropBindings(1);  // throws away the binding introduced in Pattern.
       return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
-                                 pattern.release(), term.release(), body.release()));
+                                 pattern->variable(), term.release(), body.release()));
     }
     case TokenType::LetRec: {
       cfg_scope(R"(Term = 'letrec' TypedBinder '=' Term 'in' Term)");
@@ -763,7 +763,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
           new UnaryTerm(location, UnaryTermToken::Fix,
             new AbsTerm(location, variable, binders->get(0).second.release(), term.release())));
       return TermPtr(new LetTerm(Location(token->location(), lexer->last_loc()),
-                                 pattern.release(), fix_term.release(), body.release()));
+                                 pattern->variable(), fix_term.release(), body.release()));
     }
     default: {
       cfg_scope(R"(Term = AppTerm)");

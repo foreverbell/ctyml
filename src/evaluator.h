@@ -27,7 +27,7 @@ class TermMapper : public Visitor<Term> {
 
  protected:
   std::unique_ptr<Term> Map(const Term*);
-  int depth() const { return depth_; } 
+  int depth() const { return depth_; }
 
  private:
   std::unique_ptr<Term> get(const Term* term) {

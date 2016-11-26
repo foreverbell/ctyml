@@ -62,15 +62,14 @@ void TermMapper::Visit(const ProjectTerm* term) {
 void TermMapper::Visit(const LetTerm* term) {
   term->bind_term()->Accept(this);
   ++depth_; term->body_term()->Accept(this); --depth_;
-  
-  result_[term] = std::make_unique<LetTerm>(term->location(), 
-                                            new Pattern(term->pattern()->location(), term->pattern()->variable()),
+
+  result_[term] = std::make_unique<LetTerm>(term->location(), term->variable(),
                                             get(term->bind_term()).release(), get(term->body_term()).release());
 }
 
 void TermMapper::Visit(const AbsTerm* term) {
   ++depth_; term->term()->Accept(this); --depth_;
-  
+
   result_[term] = std::make_unique<AbsTerm>(term->location(), term->variable(), term->variable_type()->clone(),
                                             get(term->term()).release());
 }
@@ -100,7 +99,7 @@ unique_ptr<Term> TermSubstituter::VariableMap(Location location, int var) {
 // TermEvaluator.
 
 void TermEvaluator::Visit(const NullaryTerm* term) {
-	
+
 }
 
 void TermEvaluator::Visit(const UnaryTerm* term) {

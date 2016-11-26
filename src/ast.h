@@ -430,17 +430,17 @@ class ProjectTerm : public Term, public VisitableImpl<Term, ProjectTerm> {
 
 class LetTerm : public Term, public VisitableImpl<Term, LetTerm> {
  public:
-  LetTerm(Location location, Pattern* pattern, Term* bind_term, Term* body_term)
-    : Term(location), pattern_(pattern), term1_(bind_term), term2_(body_term) { }
+  LetTerm(Location location, const std::string& variable, Term* bind_term, Term* body_term)
+    : Term(location), variable_(variable), term1_(bind_term), term2_(body_term) { }
 
   int ast_level() const override { return 1; }
 
-  const Pattern* pattern() const { return pattern_.get(); }
+  const std::string& variable() const { return variable_; }
   const Term* bind_term() const { return term1_.get(); }
   const Term* body_term() const { return term2_.get(); }
 
  private:
-  const std::unique_ptr<Pattern> pattern_;
+  const std::string variable_;
   const std::unique_ptr<Term> term1_, term2_;
 };
 

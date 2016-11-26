@@ -87,7 +87,7 @@ type L = List[T1];
 
       if (eval_stmt != nullptr) {
         unique_ptr<TermType> type;
-        
+
         try {
           type = type_checker.TypeCheck(eval_stmt->term().get());
         } catch (const type_exception& e) {
@@ -97,7 +97,7 @@ type L = List[T1];
         EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type.get()));
       } else if (term_stmt != nullptr) {
         unique_ptr<TermType> type;
- 
+
         try {
           type = type_checker.TypeCheck(term_stmt->term().get());
         } catch (const type_exception& e) {

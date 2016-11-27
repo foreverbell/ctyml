@@ -1,3 +1,5 @@
+#pragma once
+
 #include <exception>
 #include <string>
 #include <vector>
@@ -16,9 +18,7 @@ class ast_exception : public std::exception {
     cfgs_.push_back(std::move(cfg));
   }
 
-  virtual ~ast_exception() throw () { }
-
-  virtual const char* what() const throw () {
+  const char* what() const throw () override {
     if (!is_msg_set_) {
       is_msg_set_ = true;
       msg_.append("ast error: ");
@@ -45,3 +45,33 @@ class ast_exception : public std::exception {
   mutable std::string msg_;
   mutable bool is_msg_set_ = false;
 };
+
+template<int I>
+class generic_exception : public std::exception {
+ public:
+  generic_exception(Location location, std::string error)
+    : location_(location), error_(std::move(error)) { }
+
+  const char* what() const throw () override {
+    static const char* mapping[] = { "type", "runtime" };
+    if (!is_msg_set_) {
+      is_msg_set_ = true;
+      msg_.append(mapping[I]);
+      msg_.append(" error: ");
+      msg_.append(error_);
+    }
+    return msg_.c_str();
+  }
+
+  Location location() const { return location_; }
+
+ private:
+  const Location location_;
+  std::string error_;
+
+  mutable std::string msg_;
+  mutable bool is_msg_set_ = false;
+};
+
+using type_exception = generic_exception<0>;
+using runtime_exception = generic_exception<1>;

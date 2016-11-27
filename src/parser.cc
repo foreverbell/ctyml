@@ -3,8 +3,8 @@
 #include <string>
 #include <unordered_set>
 
-#include "error/ast-exception.h"
 #include "context.h"
+#include "error.h"
 #include "lexer.h"
 
 using std::string;

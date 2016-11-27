@@ -8,7 +8,7 @@
 
 #include "ast.h"
 #include "context.h"
-#include "error/type-exception.h"
+#include "error.h"
 #include "lexer.h"
 #include "parser.h"
 #include "pprinter.h"

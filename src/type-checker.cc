@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "context.h"
-#include "error/type-exception.h"
+#include "error.h"
 #include "type-helper.h"
 
 using std::unique_ptr;

@@ -263,6 +263,7 @@ class Term : public Locatable, public virtual Visitable<Term> {
  public:
   Term(Location location) : Locatable(location) { }
   virtual ~Term() = default;
+  virtual Term* clone() const = 0;
 
   // ast_level() denotes the level of this Term node in AST.
   // Currently there are five levels, Term(1), AppTerm(2), PathTerm(3), AscribeTerm(4) and AtomicTerm(5).
@@ -307,6 +308,7 @@ class UnaryTerm : public NAryTerm<1, UnaryTermToken>, public VisitableImpl<Term,
     : NAryTerm(location, type) {
     terms_[0].reset(term1);
   }
+  virtual Term* clone() const override { return new UnaryTerm(location_, type_, terms_[0]->clone()); }
 
   int ast_level() const override { return 2; }
 
@@ -318,6 +320,7 @@ class NullaryTerm : public NAryTerm<0, NullaryTermToken>, public VisitableImpl<T
  public:
   NullaryTerm(Location location, NullaryTermToken type)
     : NAryTerm(location, type) { }
+  virtual Term* clone() const override { return new NullaryTerm(location_, type_); }
 
   static std::unique_ptr<Term> CreateInt(Location location, int n) {
     if (n < 0) {
@@ -340,6 +343,9 @@ class BinaryTerm : public NAryTerm<2, BinaryTermToken>, public VisitableImpl<Ter
     terms_[0].reset(term1);
     terms_[1].reset(term2);
   }
+  virtual Term* clone() const override {
+    return new BinaryTerm(location_, type_, terms_[0]->clone(), terms_[1]->clone());
+  }
 
   int ast_level() const override { return 2; }
 
@@ -357,6 +363,9 @@ class TernaryTerm : public NAryTerm<3, TernaryTermToken>, public VisitableImpl<T
     terms_[1].reset(term2);
     terms_[2].reset(term3);
   }
+  virtual Term* clone() const override {
+    return new TernaryTerm(location_, type_, terms_[0]->clone(), terms_[1]->clone(), terms_[2]->clone());
+  }
 
   int ast_level() const override { return 1; }
 
@@ -372,6 +381,7 @@ class NilTerm : public Term, public VisitableImpl<Term, NilTerm> {
  public:
   NilTerm(Location location, TermType* list_type)
     : Term(location), list_type_(list_type) { }
+  virtual Term* clone() const override { return new NilTerm(location_, list_type_->clone()); }
 
   int ast_level() const override { return 5; }
 
@@ -386,6 +396,7 @@ class VariableTerm : public Term, public VisitableImpl<Term, VariableTerm> {
  public:
   VariableTerm(Location location, int index)
     : Term(location), index_(index) { }
+  virtual Term* clone() const override { return new VariableTerm(location_, index_); }
 
   int ast_level() const override { return 5; }
 
@@ -398,6 +409,13 @@ class VariableTerm : public Term, public VisitableImpl<Term, VariableTerm> {
 class RecordTerm : public Term, public VisitableImpl<Term, RecordTerm> {
  public:
   RecordTerm(Location location) : Term(location) { }
+  virtual Term* clone() const override {
+    RecordTerm* ret = new RecordTerm(location_);
+    for (size_t i = 0; i < fields_.size(); ++i) {
+      ret->add(fields_[i].first, fields_[i].second->clone());
+    }
+    return ret;
+  }
 
   int ast_level() const override { return 5; }
 
@@ -426,6 +444,7 @@ class ProjectTerm : public Term, public VisitableImpl<Term, ProjectTerm> {
  public:
   ProjectTerm(Location location, Term* term, const std::string& field)
     : Term(location), term_(term), field_(field) { }
+  virtual Term* clone() const override { return new ProjectTerm(location_, term_->clone(), field_); }
 
   int ast_level() const override { return 3; }
 
@@ -442,6 +461,7 @@ class LetTerm : public Term, public VisitableImpl<Term, LetTerm> {
  public:
   LetTerm(Location location, const std::string& variable, Term* bind_term, Term* body_term)
     : Term(location), variable_(variable), term1_(bind_term), term2_(body_term) { }
+  virtual Term* clone() const override { return new LetTerm(location_, variable_, term1_->clone(), term2_->clone()); }
 
   int ast_level() const override { return 1; }
 
@@ -460,6 +480,9 @@ class AbsTerm : public Term, public VisitableImpl<Term, AbsTerm> {
  public:
   AbsTerm(Location location, const std::string& variable, TermType* type, Term* term)
     : Term(location), variable_(variable), variable_type_(type), term_(term) { }
+  virtual Term* clone() const override {
+    return new AbsTerm(location_, variable_, variable_type_->clone(), term_->clone());
+  }
 
   int ast_level() const override { return 1; }
 
@@ -479,6 +502,9 @@ class AscribeTerm : public Term, public VisitableImpl<Term, AscribeTerm> {
  public:
   AscribeTerm(Location location, Term* term, TermType* type)
     : Term(location), term_(term), ascribe_type_(type) { }
+  virtual Term* clone() const override {
+    return new AscribeTerm(location_, term_->clone(), ascribe_type_->clone());
+  }
 
   int ast_level() const override { return 4; }
 

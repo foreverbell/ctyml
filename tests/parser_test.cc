@@ -77,6 +77,7 @@ let y = false;
 let y = false in y;
 let _ = true in y;
 (if y then {x: true, y: unit} else {x: false, y: unit}).x;
+let z = y;
 )", R"(
 10
 let x_1 = 10 in x_1
@@ -84,6 +85,7 @@ false
 let y_1 = false in y_1
 let _ = true in y
 (if y then {x:true,y:unit} else {x:false,y:unit}).x
+y
 )");
 }
 

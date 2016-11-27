@@ -112,6 +112,13 @@ T* term_cast(Term* ptr) { return dynamic_cast<T*>(ptr); }
 // This line should never be executed unless there is a bug in typechecker.
 #define DieGuardedByTypeChecker() assert(false && "death guarded by type-checker")
 
+unique_ptr<Term> TermEvaluator::Evaluate(const Term* term) {
+  term->Accept(this);
+  unique_ptr<Term> ret = eval(term);
+  result_.clear();
+  return ret;
+}
+
 void TermEvaluator::Visit(const NullaryTerm* term) {
   result_[term] = std::unique_ptr<Term>(term->clone());
 }

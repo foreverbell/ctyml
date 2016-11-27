@@ -17,7 +17,6 @@
 #include "type-helper.h"
 
 using std::string;
-using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 
@@ -46,8 +45,6 @@ type L = List[T1];
       defined_types_.push_back(std::move(stmt->type()));
     }
   }
-
-  Context* ctx() { return &ctx_; }
 
   unique_ptr<TermType> CreateType(const string& type) {
     unique_ptr<Lexer> lexer(Lexer::Create("type XXX = " + type + ";"));
@@ -114,13 +111,12 @@ type L = List[T1];
     }
   }
 
- private:
   Context ctx_;
   vector<unique_ptr<TermType>> defined_types_;
 };
 
 TEST_F(TypeCheckerTest, SimplifyTypeTest) {
-  PrettyPrinter pprinter(ctx());
+  PrettyPrinter pprinter(&ctx_);
 
   EXPECT_EQ(pprinter.PrettyPrint(SimplifyType(CreateType("N").get()).get()), "Nat");
   EXPECT_EQ(pprinter.PrettyPrint(SimplifyType(CreateType("B").get()).get()), "Bool");
@@ -236,6 +232,8 @@ type error: parameter type mismatches
 
 TEST_F(TypeCheckerTest, RightType) {
   TestTypeChecker(R"(
+let x = nil[Nat];
+let y = cons 1 x;
 letrec equal:Nat->Nat->Bool =
   lambda a:Nat b:Nat.
     if iszero a
@@ -261,6 +259,8 @@ in equal_list ((cons 3 nil[Nat]) as List[Nat]) ((cons 3 (cons 2 nil[Nat])) as Li
 (lambda x:N. x) 1;
 (lambda y:L. head y) (cons (lambda x:Nat. succ x) nil[Nat->Nat]);
 )", R"(
+List[Nat]
+List[Nat]
 Nat->Nat->Bool
 Bool
 Nat

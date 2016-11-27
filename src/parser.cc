@@ -139,6 +139,7 @@ StmtPtr Statement(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(pattern, Pattern(lexer, ctx));
       pop_or_throw(TokenType::Eq);
       assign_or_throw(term, Term(lexer, ctx));
+      ctx->AddName(pattern->variable());
 
       if (lexer->peak() == nullptr || lexer->peak()->type() == TokenType::Semi) {
         pop_or_throw(TokenType::Semi);  // expect to fail if lexer->peak() == nullptr.
@@ -232,17 +233,17 @@ PatternPtr Pattern(LexerIterator* lexer, Context* ctx) {
   const Token* token = lexer->peak();
   if (token == nullptr) return nullptr;
 
+  // Intentionally not add variable into context, this is handled by Let parser.
+  // TODO(foreverbell): This is ugly, make it consistent with TypedBinder.
   if (token->type() == TokenType::LCaseId) {
     cfg_scope(R"(Pattern = lcid)");
 
     pop_lcid_or_throw(const string& lcid);
-    ctx->AddName(lcid);
     return PatternPtr(new class Pattern(token->location(), lcid));
   } else if (token->type() == TokenType::UScore) {
     cfg_scope(R"(Pattern = '_')");
 
     pop_or_throw(TokenType::UScore);
-    ctx->AddName("_");
     return PatternPtr(new class Pattern(token->location(), "_"));
   }
   return nullptr;
@@ -736,6 +737,7 @@ TermPtr Term(LexerIterator* lexer, Context* ctx) {
       assign_or_throw(pattern, Pattern(lexer, ctx));
       pop_or_throw(TokenType::Eq);
       assign_or_throw(term, Term(lexer, ctx));
+      ctx->AddName(pattern->variable());
       pop_or_throw(TokenType::In);
       assign_or_throw(body, Term(lexer, ctx));
       ctx->DropBindings(1);  // throws away the binding introduced in Pattern.

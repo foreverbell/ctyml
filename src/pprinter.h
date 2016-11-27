@@ -19,13 +19,11 @@ class PrettyPrinter : public Visitor<Term>, public Visitor<TermType> {
   std::string PrettyPrint(const TermType* type);
 
  private:
-  std::string get(const TermType* type) {
-    return std::move(type_pprints_[type]);
-  }
+  std::string get(const TermType* type) { return std::move(type_pprints_[type]); }
+  std::string get(const std::unique_ptr<TermType>& type) { return std::move(type_pprints_[type.get()]); }
 
-  std::string get(const Term* term) {
-    return std::move(term_pprints_[term]);
-  }
+  std::string get(const Term* term) { return std::move(term_pprints_[term]); }
+  std::string get(const std::unique_ptr<Term>& term) { return std::move(term_pprints_[term.get()]); }
 
   bool IsPrintableNatTerm(const Term* term, int* nat);
 

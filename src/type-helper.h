@@ -20,6 +20,9 @@ class TermTypeShifter : public Visitor<TermType> {
   std::unique_ptr<TermType> Shift(const TermType*);
 
  private:
+  std::unique_ptr<TermType> get(const TermType* type) { return std::move(shifted_types_[type]); }
+  std::unique_ptr<TermType> get(const std::unique_ptr<TermType>& type) { return std::move(shifted_types_[type.get()]); }
+
   const int delta_;
   std::unordered_map<const TermType*, std::unique_ptr<TermType>> shifted_types_;
 };

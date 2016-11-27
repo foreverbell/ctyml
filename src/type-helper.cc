@@ -50,14 +50,14 @@ void TermTypeShifter::Visit(const UnitTermType* type) {
 
 void TermTypeShifter::Visit(const ListTermType* type) {
   type->type()->Accept(this);
-  shifted_types_[type] = std::make_unique<ListTermType>(type->location(), shifted_types_[type->type().get()].release());
+  shifted_types_[type] = std::make_unique<ListTermType>(type->location(), get(type->type()).release());
 }
 
 void TermTypeShifter::Visit(const RecordTermType* type) {
   auto shifted_type = std::make_unique<RecordTermType>(type->location());
   for (size_t i = 0; i < type->size(); ++i) {
     type->get(i).second->Accept(this);
-    shifted_type->add(type->get(i).first, shifted_types_[type->get(i).second.get()].release());
+    shifted_type->add(type->get(i).first, get(type->get(i).second).release());
   }
   shifted_types_[type] = std::move(shifted_type);
 }
@@ -66,7 +66,7 @@ void TermTypeShifter::Visit(const ArrowTermType* type) {
   type->type1()->Accept(this);
   type->type2()->Accept(this);
   shifted_types_[type] = std::make_unique<ArrowTermType>(
-      type->location(), shifted_types_[type->type1().get()].release(), shifted_types_[type->type2().get()].release());
+      type->location(), get(type->type1()).release(), get(type->type2()).release());
 }
 
 void TermTypeShifter::Visit(const UserDefinedTermType* type) {

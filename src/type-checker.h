@@ -16,9 +16,8 @@ class TypeChecker : public Visitor<Term> {
   std::unique_ptr<TermType> TypeCheck(const Term*);
 
  private:
-  std::unique_ptr<TermType> typeof(const Term* term) {
-    return std::move(typeof_[term]);
-  }
+  std::unique_ptr<TermType> typeof(const Term* term) { return std::move(typeof_[term]); }
+  std::unique_ptr<TermType> typeof(const std::unique_ptr<Term>& term) { return std::move(typeof_[term.get()]); }
 
   std::unordered_map<const Term*, std::unique_ptr<TermType>> typeof_;
   Context* const ctx_;

@@ -310,7 +310,8 @@ class UnaryTerm : public NAryTerm<1, UnaryTermToken>, public VisitableImpl<Term,
 
   int ast_level() const override { return 2; }
 
-  const Term* term() const { return terms_[0].get(); }
+  std::unique_ptr<Term>& term() { return terms_[0]; }
+  const std::unique_ptr<Term>& term() const { return terms_[0]; }
 };
 
 class NullaryTerm : public NAryTerm<0, NullaryTermToken>, public VisitableImpl<Term, NullaryTerm> {
@@ -342,8 +343,10 @@ class BinaryTerm : public NAryTerm<2, BinaryTermToken>, public VisitableImpl<Ter
 
   int ast_level() const override { return 2; }
 
-  const Term* term1() const { return terms_[0].get(); }
-  const Term* term2() const { return terms_[1].get(); }
+  std::unique_ptr<Term>& term1() { return terms_[0]; }
+  const std::unique_ptr<Term>& term1() const { return terms_[0]; }
+  std::unique_ptr<Term>& term2() { return terms_[1]; }
+  const std::unique_ptr<Term>& term2() const { return terms_[1]; }
 };
 
 class TernaryTerm : public NAryTerm<3, TernaryTermToken>, public VisitableImpl<Term, TernaryTerm> {
@@ -357,9 +360,12 @@ class TernaryTerm : public NAryTerm<3, TernaryTermToken>, public VisitableImpl<T
 
   int ast_level() const override { return 1; }
 
-  const Term* term1() const { return terms_[0].get(); }
-  const Term* term2() const { return terms_[1].get(); }
-  const Term* term3() const { return terms_[2].get(); }
+  std::unique_ptr<Term>& term1() { return terms_[0]; }
+  const std::unique_ptr<Term>& term1() const { return terms_[0]; }
+  std::unique_ptr<Term>& term2() { return terms_[1]; }
+  const std::unique_ptr<Term>& term2() const { return terms_[1]; }
+  std::unique_ptr<Term>& term3() { return terms_[2]; }
+  const std::unique_ptr<Term>& term3() const { return terms_[2]; }
 };
 
 class NilTerm : public Term, public VisitableImpl<Term, NilTerm> {
@@ -369,7 +375,8 @@ class NilTerm : public Term, public VisitableImpl<Term, NilTerm> {
 
   int ast_level() const override { return 5; }
 
-  const TermType* list_type() const { return list_type_.get(); }
+  std::unique_ptr<TermType>& list_type() { return list_type_; }
+  const std::unique_ptr<TermType>& list_type() const { return list_type_; }
 
  private:
   std::unique_ptr<TermType> list_type_;
@@ -405,10 +412,12 @@ class RecordTerm : public Term, public VisitableImpl<Term, RecordTerm> {
   }
 
   size_t size() const { return fields_.size(); }
-  std::pair<std::string, Term*> get(int index) const {
-    return std::make_pair(fields_.at(index).first, fields_.at(index).second.get());
+  std::pair<std::string, std::unique_ptr<Term>&> get(int index) {
+    return {fields_.at(index).first, fields_.at(index).second};
   }
-
+  std::pair<std::string, const std::unique_ptr<Term>&> get(int index) const {
+    return {fields_.at(index).first, fields_.at(index).second};
+  }
  private:
   std::vector<std::pair<std::string, std::unique_ptr<Term>>> fields_;
 };
@@ -420,12 +429,13 @@ class ProjectTerm : public Term, public VisitableImpl<Term, ProjectTerm> {
 
   int ast_level() const override { return 3; }
 
-  const Term* term() const { return term_.get(); }
+  std::unique_ptr<Term>& term() { return term_; }
+  const std::unique_ptr<Term>& term() const { return term_; }
   const std::string& field() const { return field_; }
 
  private:
-  const std::unique_ptr<Term> term_;
-  const std::string field_;
+  std::unique_ptr<Term> term_;
+  std::string field_;
 };
 
 class LetTerm : public Term, public VisitableImpl<Term, LetTerm> {
@@ -436,12 +446,14 @@ class LetTerm : public Term, public VisitableImpl<Term, LetTerm> {
   int ast_level() const override { return 1; }
 
   const std::string& variable() const { return variable_; }
-  const Term* bind_term() const { return term1_.get(); }
-  const Term* body_term() const { return term2_.get(); }
+  std::unique_ptr<Term>& bind_term() { return term1_; }
+  const std::unique_ptr<Term>& bind_term() const { return term1_; }
+  std::unique_ptr<Term>& body_term() { return term2_; }
+  const std::unique_ptr<Term>& body_term() const { return term2_; }
 
  private:
   const std::string variable_;
-  const std::unique_ptr<Term> term1_, term2_;
+  std::unique_ptr<Term> term1_, term2_;
 };
 
 class AbsTerm : public Term, public VisitableImpl<Term, AbsTerm> {
@@ -452,13 +464,15 @@ class AbsTerm : public Term, public VisitableImpl<Term, AbsTerm> {
   int ast_level() const override { return 1; }
 
   const std::string& variable() const { return variable_; }
-  const TermType* variable_type() const { return variable_type_.get(); }
-  const Term* term() const { return term_.get(); }
+  std::unique_ptr<TermType>& variable_type() { return variable_type_; }
+  const std::unique_ptr<TermType>& variable_type() const { return variable_type_; }
+  std::unique_ptr<Term>& term() { return term_; }
+  const std::unique_ptr<Term>& term() const { return term_; }
 
  private:
   const std::string variable_;
-  const std::unique_ptr<TermType> variable_type_;
-  const std::unique_ptr<Term> term_;
+  std::unique_ptr<TermType> variable_type_;
+  std::unique_ptr<Term> term_;
 };
 
 class AscribeTerm : public Term, public VisitableImpl<Term, AscribeTerm> {
@@ -468,12 +482,14 @@ class AscribeTerm : public Term, public VisitableImpl<Term, AscribeTerm> {
 
   int ast_level() const override { return 4; }
 
-  const Term* term() const { return term_.get(); }
-  const TermType* ascribe_type() const { return ascribe_type_.get(); }
+  std::unique_ptr<Term>& term() { return term_; }
+  const std::unique_ptr<Term>& term() const { return term_; }
+  std::unique_ptr<TermType>& ascribe_type() { return ascribe_type_; }
+  const std::unique_ptr<TermType>& ascribe_type() const { return ascribe_type_; }
 
  private:
-  const std::unique_ptr<Term> term_;
-  const std::unique_ptr<TermType> ascribe_type_;
+  std::unique_ptr<Term> term_;
+  std::unique_ptr<TermType> ascribe_type_;
 };
 
 // Statement.

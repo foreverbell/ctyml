@@ -199,7 +199,7 @@ void TypeChecker::Visit(const LetTerm* term) {
 }
 
 void TypeChecker::Visit(const AbsTerm* term) {
-  ctx_->AddBinding(term->variable(), new Binding(nullptr, term->variable_type()));
+  ctx_->AddBinding(term->variable(), new Binding(nullptr, term->variable_type().get()));
   term->term()->Accept(this);
   ctx_->DropBindings(1);
 
@@ -213,7 +213,7 @@ void TypeChecker::Visit(const AscribeTerm* term) {
   term->term()->Accept(this);
   unique_ptr<TermType> subtype = typeof(term->term());
 
-  if (!subtype->Compare(ctx_, term->ascribe_type())) {
+  if (!subtype->Compare(ctx_, term->ascribe_type().get())) {
     throw type_exception(term->location(), "body of as-term does not have the expected type");
   }
   typeof_[term] = std::move(subtype);

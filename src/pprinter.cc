@@ -1,5 +1,6 @@
 #include "pprinter.h"
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -7,6 +8,7 @@
 #include "context.h"
 
 using std::string;
+using std::unique_ptr;
 
 string PrettyPrinter::PrettyPrint(const Term* term) {
   term->Accept(this);
@@ -155,7 +157,7 @@ void PrettyPrinter::Visit(const TernaryTerm* term) {
 }
 
 void PrettyPrinter::Visit(const NilTerm* term) {
-  term_pprints_[term] = "nil[" + PrettyPrint(term->list_type()) + "]";
+  term_pprints_[term] = "nil[" + PrettyPrint(term->list_type().get()) + "]";
 }
 
 void PrettyPrinter::Visit(const VariableTerm* term) {
@@ -168,7 +170,7 @@ void PrettyPrinter::Visit(const RecordTerm* term) {
     if (i != 0) {
       term_pprints_[term] += ",";
     }
-    const Term* subterm = term->get(i).second;
+    const unique_ptr<Term>& subterm = term->get(i).second;
     subterm->Accept(this);
     term_pprints_[term] += term->get(i).first + ":" + get(subterm);
   }
@@ -199,15 +201,16 @@ void PrettyPrinter::Visit(const AbsTerm* term) {
   term->term()->Accept(this);
   ctx_->DropBindings(1);
 
-  term_pprints_[term] = "lambda " + term->variable() + ":" + PrettyPrint(term->variable_type()) + ". " + get(term->term());
+  term_pprints_[term] = "lambda " + term->variable() + ":" +
+                        PrettyPrint(term->variable_type().get()) + ". " + get(term->term());
 }
 
 void PrettyPrinter::Visit(const AscribeTerm* term) {
   term->term()->Accept(this);
   if (term->term()->ast_level() <= term->ast_level()) {
-    term_pprints_[term] = "(" + get(term->term()) + ") as " + PrettyPrint(term->ascribe_type());
+    term_pprints_[term] = "(" + get(term->term()) + ") as " + PrettyPrint(term->ascribe_type().get());
   } else {
-    term_pprints_[term] = get(term->term()) + " as " + PrettyPrint(term->ascribe_type());
+    term_pprints_[term] = get(term->term()) + " as " + PrettyPrint(term->ascribe_type().get());
   }
 }
 
@@ -224,11 +227,11 @@ bool PrettyPrinter::IsPrintableNatTerm(const Term* term, int* nat) {
     }
     return false;
   }
-  if (IsPrintableNatTerm(unary_term->term(), nat)) {
+  if (IsPrintableNatTerm(unary_term->term().get(), nat)) {
     *nat += 1;
     return true;
   } else {
-    not_nat_.insert(unary_term->term());
+    not_nat_.insert(unary_term->term().get());
     return false;
   }
 }
@@ -249,7 +252,7 @@ void PrettyPrinter::Visit(const UnitTermType* type) {
 
 void PrettyPrinter::Visit(const ListTermType* type) {
   type->type()->Accept(this);
-  type_pprints_[type] = "List[" + get(type->type().get()) + "]";
+  type_pprints_[type] = "List[" + get(type->type()) + "]";
 }
 
 void PrettyPrinter::Visit(const RecordTermType* type) {
@@ -258,7 +261,7 @@ void PrettyPrinter::Visit(const RecordTermType* type) {
     if (i != 0) {
       type_pprints_[type] += ",";
     }
-    const TermType* subtype = type->get(i).second.get();
+    const unique_ptr<TermType>& subtype = type->get(i).second;
     subtype->Accept(this);
     type_pprints_[type] += type->get(i).first + ":" + get(subtype);
   }
@@ -275,9 +278,9 @@ void PrettyPrinter::Visit(const ArrowTermType* type) {
   //   ArrowType = AtomicType '->' ArrowType;
   //   AtomicType = '(' Type ')'.
   if (type->type1()->ast_level() <= type->ast_level()) {
-    type_pprints_[type] = "(" + get(type->type1().get()) + ")->" + get(type->type2().get());
+    type_pprints_[type] = "(" + get(type->type1()) + ")->" + get(type->type2());
   } else {
-    type_pprints_[type] = get(type->type1().get()) + "->" + get(type->type2().get());
+    type_pprints_[type] = get(type->type1()) + "->" + get(type->type2());
   }
 }
 

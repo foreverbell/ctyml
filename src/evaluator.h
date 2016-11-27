@@ -20,9 +20,8 @@ class TermMapper : public Visitor<Term> {
   int depth() const { return depth_; }
 
  private:
-  std::unique_ptr<Term> get(const Term* term) {
-    return std::move(result_[term]);
-  }
+  std::unique_ptr<Term> get(const Term* term) { return std::move(result_[term]); }
+  std::unique_ptr<Term> get(const std::unique_ptr<Term>& term) { return std::move(result_[term.get()]); }
 
   std::unordered_map<const Term*, std::unique_ptr<Term>> result_;
   int depth_ = 0;

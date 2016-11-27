@@ -183,7 +183,7 @@ void TermEvaluator::Visit(const UnaryTerm* term) {
     case UnaryTermToken::Fix: {
       AbsTerm* const abs_term = term_cast<AbsTerm>(subterm.get());
       if (abs_term != nullptr) {
-        result_[term] = Substitute(abs_term->term().get(), abs_term);
+        result_[term] = Substitute(abs_term->term().get(), term);
       } else {
         DieGuardedByTypeChecker();
       }
@@ -242,7 +242,7 @@ void TermEvaluator::Visit(const VariableTerm* term) {
 }
 
 void TermEvaluator::Visit(const RecordTerm* term) {
-  unique_ptr<RecordTerm> record_term;
+  auto record_term = std::make_unique<RecordTerm>(term->location());
 
   for (size_t i = 0; i < term->size(); ++i) {
     term->get(i).second->Accept(this);
@@ -263,9 +263,8 @@ void TermEvaluator::Visit(const ProjectTerm* term) {
         return;
       }
     }
-    DieGuardedByTypeChecker();
   }
-  result_[term] = std::make_unique<ProjectTerm>(term->location(), subterm.release(), term->field());
+  DieGuardedByTypeChecker();
 }
 
 void TermEvaluator::Visit(const LetTerm* term) {

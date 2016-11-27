@@ -12,6 +12,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Coverage")
   set (CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
   set (CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
   add_custom_target (ctyml_coverage ./test-coverage.sh)
+else ()
+  add_definitions (-O2)
 endif ()
 
 file (GLOB SOURCE_FILES src/*.cc)

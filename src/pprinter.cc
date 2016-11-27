@@ -45,8 +45,6 @@ void PrettyPrinter::Visit(const NullaryTerm* term) {
 }
 
 void PrettyPrinter::Visit(const UnaryTerm* term) {
-  term->term()->Accept(this);
-
   if (term->type() == UnaryTermToken::Succ) {
     int nat = 0;
     if (IsPrintableNatTerm(term, &nat)) {
@@ -54,6 +52,8 @@ void PrettyPrinter::Visit(const UnaryTerm* term) {
       return;
     }
   }
+
+  term->term()->Accept(this);
 
   string func;
   switch (term->type()) {
@@ -183,8 +183,7 @@ void PrettyPrinter::Visit(const AbsTerm* term) {
   term->term()->Accept(this);
   ctx_->DropBindings(1);
 
-  term_pprints_[term] = "lambda " + term->variable() + ":" +
-                        PrettyPrint(term->variable_type().get()) + ". " + get(term->term());
+  term_pprints_[term] = "lambda " + fresh + ":" + PrettyPrint(term->variable_type().get()) + ". " + get(term->term());
 }
 
 void PrettyPrinter::Visit(const AscribeTerm* term) {

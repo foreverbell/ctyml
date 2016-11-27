@@ -46,61 +46,43 @@ void PrettyPrinter::Visit(const NullaryTerm* term) {
 
 void PrettyPrinter::Visit(const UnaryTerm* term) {
   term->term()->Accept(this);
+
+  if (term->type() == UnaryTermToken::Succ) {
+    int nat = 0;
+    if (IsPrintableNatTerm(term, &nat)) {
+      term_pprints_[term] = std::to_string(nat);
+      return;
+    }
+  }
+
+  string func;
   switch (term->type()) {
     case (UnaryTermToken::Succ): {
-      int nat = 0;
-      if (IsPrintableNatTerm(term, &nat)) {
-        term_pprints_[term] = std::to_string(nat);
-        break;
-      }
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "succ (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "succ " + get(term->term());
-      }
+      func = "succ";
     } break;
     case (UnaryTermToken::Pred): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "pred (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "pred " + get(term->term());
-      }
+      func = "pred";
     } break;
     case (UnaryTermToken::IsZero): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "iszero (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "iszero " + get(term->term());
-      }
+      func = "iszero";
     } break;
     case (UnaryTermToken::Head): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "head (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "head " + get(term->term());
-      }
+      func = "head";
     } break;
     case (UnaryTermToken::Tail): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "tail (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "tail " + get(term->term());
-      }
+      func = "tail";
     } break;
     case (UnaryTermToken::IsNil): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "isnil (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "isnil " + get(term->term());
-      }
+      func = "isnil";
     } break;
     case (UnaryTermToken::Fix): {
-      if (term->term()->ast_level() <= term->ast_level()) {
-        term_pprints_[term] = "fix (" + get(term->term()) + ")";
-      } else {
-        term_pprints_[term] = "fix " + get(term->term());
-      }
+      func = "fix";
     } break;
+  }
+  if (term->term()->ast_level() <= term->ast_level()) {
+    term_pprints_[term] = func + " (" + get(term->term()) + ")";
+  } else {
+    term_pprints_[term] = func + " " + get(term->term());
   }
 }
 

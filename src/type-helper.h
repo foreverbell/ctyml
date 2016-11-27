@@ -43,16 +43,19 @@ class TermTypeComparator {
 
 class BoolTermTypeComparator : public TermTypeComparator {
  public:
+  BoolTermTypeComparator(const Context*, const BoolTermType*) { }
   bool Compare(const BoolTermType*) const override { return true; }
 };
 
 class NatTermTypeComparator : public TermTypeComparator {
  public:
+  NatTermTypeComparator(const Context*, const NatTermType*) { }
   bool Compare(const NatTermType*) const override { return true; }
 };
 
 class UnitTermTypeComparator : public TermTypeComparator {
  public:
+  UnitTermTypeComparator(const Context*, const UnitTermType*) { }
   bool Compare(const UnitTermType*) const override { return true; }
 };
 

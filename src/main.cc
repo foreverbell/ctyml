@@ -29,8 +29,6 @@ void usage(int argc, char** argv) {
 }
 
 Context ctx;
-vector<unique_ptr<Term>> evaluated_terms;
-vector<unique_ptr<TermType>> defined_types;
 
 bool Interpret(const string& input) {
   std::unique_ptr<Lexer> lexer(Lexer::Create(input));
@@ -69,10 +67,10 @@ bool Interpret(const string& input) {
       } else if (term_stmt != nullptr) {
         type = type_checker.TypeCheck(term_stmt->term().get());
         term = evaluator.Evaluate(term_stmt->term().get());
-        ctx.AddBinding(term_stmt->variable(), new Binding(term.get(), type.get()));
+        ctx.AddBinding(term_stmt->variable(), new Binding(term.release(), type.release()));
       } else if (type_stmt != nullptr) {
         type = unique_ptr<TermType>(type_stmt->type()->clone());
-        ctx.AddBinding(type_stmt->type_alias(), new Binding(nullptr, type.get()));
+        ctx.AddBinding(type_stmt->type_alias(), new Binding(nullptr, type.release()));
       }
     } catch (const type_exception& e) {
       lexer->locator()->Error(2, e.location(), e.what());
@@ -80,12 +78,6 @@ bool Interpret(const string& input) {
     } catch (const runtime_exception& e) {
       lexer->locator()->Error(2, e.location(), e.what());
       return false;
-    }
-    if (term != nullptr) {
-      evaluated_terms.push_back(std::move(term));
-    }
-    if (type != nullptr) {
-      defined_types.push_back(std::move(type));
     }
   }
   return true;

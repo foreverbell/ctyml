@@ -41,8 +41,7 @@ type L = List[T1];
     assert(stmts.size() == 7);
     for (size_t i = 0; i < stmts.size(); ++i) {
       BindTypeStmt* stmt = dynamic_cast<BindTypeStmt*>(stmts[i].get());
-      ctx_.AddBinding(stmt->type_alias(), new Binding(nullptr, stmt->type().get()));
-      defined_types_.push_back(std::move(stmt->type()));
+      ctx_.AddBinding(stmt->type_alias(), new Binding(nullptr, stmt->type().release()));
     }
   }
 
@@ -102,8 +101,7 @@ type L = List[T1];
           continue;
         }
         EXPECT_EQ(pprints[i], pprinter.PrettyPrint(type.get()));
-        ctx_.AddBinding(term_stmt->variable(), new Binding(term_stmt->term().get(), type.get()));
-        defined_types_.push_back(std::move(type));
+        ctx_.AddBinding(term_stmt->variable(), new Binding(term_stmt->term().release(), type.release()));
       } else {
         // Leave BindTypeStmt unhandled.
         FAIL() << "unknown stmt.";
@@ -112,7 +110,6 @@ type L = List[T1];
   }
 
   Context ctx_;
-  vector<unique_ptr<TermType>> defined_types_;
 };
 
 TEST_F(TypeCheckerTest, SimplifyTypeTest) {

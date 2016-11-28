@@ -60,9 +60,7 @@ class EvaluatorTest : public ::testing::Test {
           continue;
         }
         EXPECT_EQ(pprints[i], pprinter.PrettyPrint(term.get()));
-        ctx_.AddBinding(term_stmt->variable(), new Binding(term.get(), type.get()));
-        defined_types_.push_back(std::move(type));
-        evaluated_terms_.push_back(std::move(term));
+        ctx_.AddBinding(term_stmt->variable(), new Binding(term.release(), type.release()));
       } else {
         // Leave BindTypeStmt unhandled.
         FAIL() << "unknown stmt.";
@@ -71,8 +69,6 @@ class EvaluatorTest : public ::testing::Test {
   }
 
   Context ctx_;
-  vector<unique_ptr<TermType>> defined_types_;
-  vector<unique_ptr<Term>> evaluated_terms_;
 };
 
 TEST_F(EvaluatorTest, EmptyList) {

@@ -189,7 +189,7 @@ void TypeChecker::Visit(const ProjectTerm* term) {
 void TypeChecker::Visit(const LetTerm* term) {
   term->bind_term()->Accept(this);
   unique_ptr<TermType> bind_type = typeof(term->bind_term());
-  ctx_->AddBinding(term->variable(), new Binding(nullptr, bind_type.get()));
+  ctx_->AddBinding(term->variable(), new Binding(nullptr, bind_type.release()));
   term->body_term()->Accept(this);
   ctx_->DropBindings(1);
 
@@ -199,7 +199,7 @@ void TypeChecker::Visit(const LetTerm* term) {
 }
 
 void TypeChecker::Visit(const AbsTerm* term) {
-  ctx_->AddBinding(term->variable(), new Binding(nullptr, term->variable_type().get()));
+  ctx_->AddBinding(term->variable(), new Binding(nullptr, term->variable_type()->clone()));
   term->term()->Accept(this);
   ctx_->DropBindings(1);
 

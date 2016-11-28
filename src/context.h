@@ -7,19 +7,18 @@
 #include <utility>
 #include <vector>
 
-class Term;
-class TermType;
+#include "ast.h"
 
 class Binding {
  public:
   Binding(const Term* term, const TermType* type) : term_(term), type_(type) { }
 
-  const Term* term() const { return term_; }
-  const TermType* type() const { return type_; }
+  const Term* term() const { return term_.get(); }
+  const TermType* type() const { return type_.get(); }
 
  private:
-  const Term* const term_;  // nullable.
-  const TermType* const type_;  // nullable.
+  const std::unique_ptr<const Term> term_;  // nullable.
+  const std::unique_ptr<const TermType> type_;  // nullable.
 };
 
 class Context final {

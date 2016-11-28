@@ -49,7 +49,9 @@ class LexerIterator {
   size_t size() const { return lexer_->size(); }
   bool eof() const { return offset_ >= size(); }
 
-  Location location() const { return eof() ? Location(-1, -1) : peak()->location(); }
+  Location location() const {
+    return eof() ? Location(lexer_->input().length(), lexer_->input().length() + 1) : peak()->location();
+  }
 
  private:
   const Lexer* const lexer_;

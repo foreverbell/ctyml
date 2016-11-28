@@ -77,4 +77,5 @@ void Locator::Error(int fd, Location location, const string& error) const {
     fputc(input_[i], f);
     if (i + 1 == location.end) tty::sgr0(fd);
   }
+  fprintf(f, "\n");
 }

@@ -1,7 +1,9 @@
 #include "lexer.h"
-#include "token.h"
 
 #include <unordered_map>
+
+#include "token.h"
+#include "error.h"
 
 using std::string;
 using std::unique_ptr;
@@ -61,17 +63,16 @@ bool is_whitespaces(char ch) {
 size_t Lexer::ParseNumber(size_t offset, unique_ptr<Token>* token) {
   assert(isdigit(input_[offset]));
 
-  int number = 0;
-  size_t advance = 0;
+  int number = input_[offset] - '0';
+  size_t advance = 1;
   while (offset + advance < input_.length() && isdigit(input_[offset + advance])) {
     number = number * 10 + input_[offset + advance] - '0';
     advance += 1;
   }
 
   token->reset(Token::CreateInt(Location(offset, offset + advance), number));
-  if (token == nullptr) {
-    return 0;
-  }
+  assert(token != nullptr);
+
   return advance;
 }
 
@@ -93,9 +94,8 @@ size_t Lexer::ParseIdentifer(size_t offset, unique_ptr<Token>* token) {
   const unordered_map<string, TokenType>::const_iterator iter = keyword_list.find(identifier);
   token->reset(iter == keyword_list.end() ? Token::CreateId(location, identifier)
                                           : Token::Create(location, iter->second));
-  if (token == nullptr) {
-    return 0;
-  }
+  assert(token != nullptr);
+
   return advance;
 }
 
@@ -104,9 +104,7 @@ size_t Lexer::ParseToken(size_t offset, unique_ptr<Token>* token) {
 #define create_token(token_type, length) \
   do { \
     token->reset(Token::Create(Location(offset, offset + length), token_type)); \
-    if (token == nullptr) { \
-      return 0; \
-    } \
+    assert(token != nullptr); \
     return length; \
   } while (false)
 
@@ -131,7 +129,7 @@ size_t Lexer::ParseToken(size_t offset, unique_ptr<Token>* token) {
     return ParseIdentifer(offset, token);
   }
 
-  return 0;
+  throw lexical_exception(Location(offset, offset + 1), "unknown charactor '" + string(1, input_[offset]) + "'");
 }
 
 /* static */
@@ -147,12 +145,9 @@ Lexer* Lexer::Create(const string& input) {
       continue;
     }
     const int advance = lexer->ParseToken(offset, &token);
-    if (advance == 0) {
-      return nullptr;
-    } else {
-      lexer->tokens_.push_back(std::move(token));
-      offset += advance;
-    }
+    assert(advance > 0);
+    lexer->tokens_.push_back(std::move(token));
+    offset += advance;
   }
 
   return lexer.release();

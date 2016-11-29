@@ -53,7 +53,7 @@ class generic_exception : public std::exception {
     : location_(location), error_(std::move(error)) { }
 
   const char* what() const throw () override {
-    static const char* mapping[] = { "type", "runtime" };
+    static const char* mapping[] = { "lexical", "type", "runtime" };
     if (!is_msg_set_) {
       is_msg_set_ = true;
       msg_.append(mapping[I]);
@@ -73,5 +73,6 @@ class generic_exception : public std::exception {
   mutable bool is_msg_set_ = false;
 };
 
-using type_exception = generic_exception<0>;
-using runtime_exception = generic_exception<1>;
+using lexical_exception = generic_exception<0>;
+using type_exception = generic_exception<1>;
+using runtime_exception = generic_exception<2>;

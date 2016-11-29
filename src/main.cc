@@ -30,8 +30,16 @@ void usage(int argc, char** argv) {
 
 Context ctx;
 
-bool Interpret(const string& input) {
-  std::unique_ptr<Lexer> lexer(Lexer::Create(input));
+bool Interpret(const string& filename, const string& input) {
+  unique_ptr<Lexer> lexer;
+  Locator locator(filename, input);
+
+  try {
+    lexer = unique_ptr<Lexer>(Lexer::Create(input));
+  } catch (const lexical_exception& e) {
+    locator.Error(2, e.location(), e.what());
+    return false;
+  }
 
   if (lexer == nullptr) {
     fprintf(stderr, "lexical error\n");
@@ -47,7 +55,7 @@ bool Interpret(const string& input) {
   try {
     stmts = parser.ParseAST(&ctx);
   } catch (const ast_exception& e) {
-    lexer->locator()->Error(2, e.location(), e.what());
+    locator.Error(2, e.location(), e.what());
     return false;
   }
 
@@ -73,10 +81,10 @@ bool Interpret(const string& input) {
         ctx.AddBinding(type_stmt->type_alias(), new Binding(nullptr, type.release()));
       }
     } catch (const type_exception& e) {
-      lexer->locator()->Error(2, e.location(), e.what());
+      locator.Error(2, e.location(), e.what());
       return false;
     } catch (const runtime_exception& e) {
-      lexer->locator()->Error(2, e.location(), e.what());
+      locator.Error(2, e.location(), e.what());
       return false;
     }
   }
@@ -121,7 +129,7 @@ int main(int argc, char** argv) {
         break;
       }
       if (!Dispatch(input)) {
-        Interpret(input);
+        Interpret("(file)", input);
       }
     }
   } else {
@@ -133,7 +141,7 @@ int main(int argc, char** argv) {
     fin.seekg(0, std::ios::beg);
     input.assign((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
 
-    Interpret(input);
+    Interpret(argv[1], input);
   }
   return 0;
 }

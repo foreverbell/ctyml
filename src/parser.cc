@@ -801,9 +801,12 @@ vector<StmtPtr> Parser::ParseAST(Context* ctx) {
       throw ast_exception(std::move(e), CFG);
     }
     if (stmt == nullptr) {
-      throw ast_exception(lexer_iter.location(), CFG, "bad statement");
+      if (!lexer_iter.eof()) {
+        throw ast_exception(lexer_iter.location(), CFG, "expect a statement");
+      }
+    } else {
+      stmts.push_back(std::move(stmt));
     }
-    stmts.push_back(std::move(stmt));
   } while (!lexer_iter.eof());
   // Restore the Context to leave it unchanged.
   ctx->DropBindingsTo(old_size);

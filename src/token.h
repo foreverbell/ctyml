@@ -29,9 +29,7 @@ class Token final : public Locatable {
   Token& operator=(const Token&) = delete;
 
   static Token* Create(Location location, TokenType type) {
-    if (type == TokenType::Int || type == TokenType::LCaseId || type == TokenType::UCaseId) {
-      return nullptr;
-    }
+    assert(type != TokenType::Int && type != TokenType::LCaseId && type != TokenType::UCaseId);
     return new Token(location, type, -1, "");
   }
 

@@ -83,6 +83,30 @@ bool Interpret(const string& input) {
   return true;
 }
 
+bool Dispatch(const string& input) {
+  if (input.empty() || input[0] != ':') {
+    return false;
+  }
+  if (input == ":dumpctx") {
+    PrettyPrinter pprinter(&ctx);
+    for (size_t i = 0; i < ctx.size(); ++i) {
+      const string& bind = ctx.get(i).first;
+      const Term* term = ctx.get(i).second->term();
+      const TermType* type = ctx.get(i).second->type();
+
+      assert(type != nullptr);
+      if (term == nullptr) {
+        printf("%s = %s\n", bind.c_str(), pprinter.PrettyPrint(type).c_str());
+      } else {
+        printf("%s = %s : %s\n", bind.c_str(), pprinter.PrettyPrint(term).c_str(), pprinter.PrettyPrint(type).c_str());
+      }
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
 int main(int argc, char** argv) {
   if (argc != 2) {
     usage(argc, argv);
@@ -96,7 +120,9 @@ int main(int argc, char** argv) {
       if (!std::getline(std::cin, input)) {
         break;
       }
-      Interpret(input);
+      if (!Dispatch(input)) {
+        Interpret(input);
+      }
     }
   } else {
     ifstream fin(argv[1]);

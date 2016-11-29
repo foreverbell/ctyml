@@ -9,7 +9,9 @@ TODO
 ## Example
 
 ```ocaml
-letrec gen:Nat->List[Nat] =
+type NatList = List[Nat];
+
+letrec gen:Nat->NatList =
   lambda x:Nat.
     if iszero x
       then nil[Nat]
@@ -21,14 +23,20 @@ letrec plus:Nat->Nat->Nat =
       then b
       else plus (pred a) (succ b);
 
-letrec sum:List[Nat]->Nat =
-  lambda l:List[Nat].
+letrec sum:NatList->Nat =
+  lambda l:NatList.
     if isnil l
       then 0
-      else plus (head l) (sum (tail l))
-in sum (gen 23);
+      else plus (head l) (sum (tail l));
+
+let l = gen 2;
+let x = sum (gen 23);
+
+l;
+x;
 
 ---
+cons (2) (cons (1) nil[Nat])
 276
 ```
 

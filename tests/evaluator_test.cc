@@ -132,7 +132,8 @@ letrec sum:List[Nat]->Nat =
   lambda l:List[Nat].
     if isnil l
       then 0
-      else plus (head l) (sum (tail l)) in sum (gen 23);
+      else plus (head l) (sum (tail l))
+in sum (gen 23);
 )", R"(
 lambda x:Nat. if iszero x then nil[Nat] else cons x (fix (lambda gen:Nat->List[Nat]. lambda x_1:Nat. if iszero x_1 then nil[Nat] else cons x_1 (gen (pred x_1))) (pred x))
 nil[Nat]

@@ -41,11 +41,6 @@ bool Interpret(const string& filename, const string& input) {
     return false;
   }
 
-  if (lexer == nullptr) {
-    fprintf(stderr, "lexical error\n");
-    return false;
-  }
-
   Parser parser(lexer.get());
   vector<unique_ptr<Stmt>> stmts;
   PrettyPrinter pprinter(&ctx);

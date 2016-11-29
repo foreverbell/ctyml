@@ -42,7 +42,7 @@ cons (2) (cons (1) nil[Nat])
 
 ## Grammar
 
-See (src/ast.h)[https://github.com/foreverbell/ctyml/blob/master/src/ast.h]
+See [src/ast.h](https://github.com/foreverbell/ctyml/blob/master/src/ast.h)
 
 ## TODO list
 

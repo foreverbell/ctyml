@@ -86,28 +86,38 @@ bool Interpret(const string& filename, const string& input) {
   return true;
 }
 
-bool Dispatch(const string& input) {
-  if (input.empty() || input[0] != ':') {
-    return false;
-  }
+void Dispatch(const string& input, bool* multi_line_stmts) {
   if (input == ":dumpctx") {
-    PrettyPrinter pprinter(&ctx);
-    for (size_t i = 0; i < ctx.size(); ++i) {
-      const string& bind = ctx.get(i).first;
-      const Term* term = ctx.get(i).second->term();
-      const TermType* type = ctx.get(i).second->type();
+    if (ctx.size() == 0) {
+      puts("empty context.");
+    } else {
+      PrettyPrinter pprinter(&ctx);
+      for (size_t i = 0; i < ctx.size(); ++i) {
+        const string& bind = ctx.get(i).first;
+        const Term* term = ctx.get(i).second->term();
+        const TermType* type = ctx.get(i).second->type();
 
-      assert(type != nullptr);
-      if (term == nullptr) {
-        printf("%s = %s\n", bind.c_str(), pprinter.PrettyPrint(type).c_str());
-      } else {
-        printf("%s = %s : %s\n", bind.c_str(), pprinter.PrettyPrint(term).c_str(), pprinter.PrettyPrint(type).c_str());
+        assert(type != nullptr);
+        if (term == nullptr) {
+          printf("%s = %s\n", bind.c_str(), pprinter.PrettyPrint(type).c_str());
+        } else {
+          printf("%s = %s : %s\n", bind.c_str(), pprinter.PrettyPrint(term).c_str(), pprinter.PrettyPrint(type).c_str());
+        }
       }
     }
+  } else if (input == ":{") {
+    if (*multi_line_stmts) {
+      puts("already in multi-line statement mode, skipped.");
+    }
+    *multi_line_stmts = true;
+  } else if (input == ":}") {
+    if (!*multi_line_stmts) {
+      puts("not in multi-line statement mode, ignored.");
+    }
+    *multi_line_stmts = false;
   } else {
-    return false;
+    printf("unknown command %s.\n", input.c_str());
   }
-  return true;
 }
 
 int main(int argc, char** argv) {
@@ -116,14 +126,31 @@ int main(int argc, char** argv) {
   }
 
   if (strcmp(argv[1], "-i") == 0) {
+    bool multi_line_stmts = false;
+    string stmts;
+
     while (true) {
       string input;
 
       printf("ctyml> ");
-      if (!std::getline(std::cin, input)) {
-        break;
+      if (!std::getline(std::cin, input)) break;
+
+      if (input != ":}" && multi_line_stmts) {
+        stmts += input;
+        stmts += "\n";
+        continue;
       }
-      if (!Dispatch(input)) {
+
+      if (input.empty()) continue;
+
+      if (input[0] == ':') {
+        Dispatch(input, &multi_line_stmts);
+
+        if (!multi_line_stmts && !stmts.empty()) {
+          Interpret("(file)", stmts);
+          stmts.clear();
+        }
+      } else {
         Interpret("(file)", input);
       }
     }
